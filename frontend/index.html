@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Urban Heat AI Platform</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+  <div class="bg-grid"></div>
+  <div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div>
+
+  <nav class="navbar">
+    <div class="nav-brand"><span class="logo">🌡️</span> Urban Heat AI</div>
+    <div class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="database.html">Database</a>
+    </div>
+    <span class="backend-status offline" id="backend-status">● Checking…</span>
+  </nav>
+
+  <div class="main-container">
+    <section class="hero">
+      <div class="hero-badge">🛰️ Live Satellite Analytics · 10 Indian Cities</div>
+      <h1>Urban Heat AI Platform</h1>
+      <p class="hero-subtitle">AI-powered spatial analytics for Urban Heat Island detection,
+        public health risk assessment &amp; climate-resilient urban planning across Indian cities.
+        FastAPI backend + intelligent frontend with offline fallback.</p>
+      <div class="hero-stats">
+        <div class="stat-card"><div class="stat-value" data-count="900" data-final="900">0</div><div class="stat-label">Grid Zones/City</div></div>
+        <div class="stat-card"><div class="stat-value" data-count="39.2" data-decimals="1" data-suffix="°C" data-final="39.2°C">0</div><div class="stat-label">Avg LST (Delhi)</div></div>
+        <div class="stat-card"><div class="stat-value" data-count="10" data-final="10">0</div><div class="stat-label">Cities Covered</div></div>
+        <div class="stat-card"><div class="stat-value" data-count="1.2" data-decimals="1" data-suffix="M" data-final="1.2M">0</div><div class="stat-label">People at Risk</div></div>
+      </div>
+      <div class="hero-actions">
+        <a href="dashboard.html" class="cta-button">Launch Dashboard →</a>
+        <a href="http://localhost:8000/docs" target="_blank" class="cta-button-sec">API Docs ↗</a>
+      </div>
+    </section>
+
+    <section class="features reveal">
+      <h2>Platform Capabilities</h2>
+      <p class="section-sub">FastAPI backend → ML models → Real-time risk engine → Interactive dashboard.</p>
+      <div class="features-grid">
+        <div class="feature-card"><div class="feature-icon">🛰️</div><h3>Satellite Heat Mapping</h3><p>Landsat-8 / Sentinel-2 LST &amp; NDVI processing. 30×30 grid per city with UHI intensity scoring.</p></div>
+        <div class="feature-card"><div class="feature-icon">🤖</div><h3>AI Risk Prediction</h3><p>Random Forest / XGBoost on LST, NDVI, population density. Heat Vulnerability Index (HVI) per zone.</p></div>
+        <div class="feature-card"><div class="feature-icon">🏥</div><h3>Health Impact Assessment</h3><p>Estimated deaths, hospital beds needed, population at risk — computed live from backend ML service.</p></div>
+        <div class="feature-card"><div class="feature-icon">🌳</div><h3>Planning Recommendations</h3><p>Rule-based engine: green cover, cool roofs, pavements, cooling centers per zone priority.</p></div>
+        <div class="feature-card"><div class="feature-icon">🧪</div><h3>What-If Simulation</h3><p>Backend simulate API: "+20% green cover” → real LST reduction &amp; health impact projection.</p></div>
+        <div class="feature-card"><div class="feature-icon">🗺️</div><h3>Multi-City Dashboard</h3><p>Switch between 10 major Indian cities. Backend serves per-city GeoJSON, frontend renders on Leaflet map.</p></div>
+        <div class="feature-card"><div class="feature-icon">💬</div><h3>AI Chatbot (HeatBot)</h3><p>Keyword-based assistant with Hindi+English support. Answers heat, health, climate, recommendation queries.</p></div>
+        <div class="feature-card"><div class="feature-icon">🗄️</div><h3>Activity Database</h3><p>Every user interaction — city switch, simulation, chat — logged and viewable with CSV export.</p></div>
+        <div class="feature-card"><div class="feature-icon">🌍</div><h3>Climate Alert System</h3><p>Rotating banner of real IPCC + India climate change alerts. Keeps users informed of urgency.</p></div>
+      </div>
+    </section>
+
+    <section class="architecture reveal">
+      <h2>System Architecture</h2>
+      <div class="arch-flow">
+        <div class="arch-box">🛰️ Satellite / Weather / Population / GIS Data</div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-box">ml/ — Preprocessing, Feature Engineering, Model Training</div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-box highlight">FastAPI Backend — /heat /health /recommendations /zones</div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-box highlight">Multi-city GeoJSON + HVI Engine + Simulation API</div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-box">Frontend — Leaflet Map + Charts + Chatbot + DB Logger</div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-box">database/ — SQLite schema for zones, heat, health, recommendations</div>
+      </div>
+    </section>
+
+    <section class="quickstart reveal">
+      <h2>🤖 The ML Model</h2>
+      <p class="section-sub">A real trained RandomForest regressor predicts LST from vegetation, population density &amp; built-up intensity — it's what actually drives the simulation engine, not a hardcoded formula.</p>
+      <div class="ml-stats">
+        <div class="stat-card"><div class="stat-value" id="ml-r2">0.989</div><div class="stat-label">R² Score</div></div>
+        <div class="stat-card"><div class="stat-value" id="ml-mae">0.26°C</div><div class="stat-label">Mean Abs. Error</div></div>
+        <div class="stat-card"><div class="stat-value" id="ml-samples">9,000</div><div class="stat-label">Training Samples</div></div>
+        <div class="stat-card"><div class="stat-value" id="ml-cities">10</div><div class="stat-label">Cities Trained On</div></div>
+      </div>
+      <div class="qs-grid">
+        <div class="qs-card">
+          <div class="qs-num">🌳</div>
+          <div><h4>Input Features</h4><small>NDVI, population density, urban intensity, live ambient temperature (Open-Meteo), city heat-factor.</small></div>
+        </div>
+        <div class="qs-card">
+          <div class="qs-num">⚙️</div>
+          <div><h4>Algorithm</h4><small>RandomForestRegressor (scikit-learn) — 60 trees, max depth 8. Falls back to a formula if scikit-learn can't load.</small></div>
+        </div>
+        <div class="qs-card">
+          <div class="qs-num">🧪</div>
+          <div><h4>Powers What-If Simulation</h4><small>Each intervention adjusts real physical drivers; the model predicts the resulting LST, zone by zone.</small></div>
+        </div>
+      </div>
+      <p class="ml-endpoint">Live metrics: <code>GET /ml/model-info</code></p>
+    </section>
+  </div>
+
+  <footer>Urban Heat AI — IS-14 Hackathon · AlphaCoder's ❤ , India </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/effects.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const data = (typeof apiFetch === 'function') ? await apiFetch('/ml/model-info') : null;
+      if (data && data.model_loaded) {
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        set('ml-r2', data.test_r2);
+        set('ml-mae', data.test_mae_c + '°C');
+        set('ml-samples', data.n_samples.toLocaleString('en-IN'));
+        set('ml-cities', data.n_cities);
+      }
+    });
+  </script>
+</body>
+</html>

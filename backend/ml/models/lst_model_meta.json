@@ -1,0 +1,24 @@
+{
+  "algorithm": "RandomForestRegressor (scikit-learn)",
+  "features": [
+    "ndvi",
+    "population_density",
+    "urban_index",
+    "ambient_temp_c",
+    "heat_factor"
+  ],
+  "target": "lst",
+  "n_samples": 9000,
+  "n_cities": 10,
+  "test_r2": 0.9893,
+  "test_mae_c": 0.257,
+  "feature_importances": {
+    "ndvi": 0.1686,
+    "population_density": 0.0419,
+    "urban_index": 0.0422,
+    "ambient_temp_c": 0.7324,
+    "heat_factor": 0.0149
+  },
+  "trained_at": "2026-09-18T04:15:17Z",
+  "notes": "Trained on physically-motivated synthetic multi-city grids (calibrated to live Open-Meteo weather where available). Swap _build_dataset() for a real Landsat/Sentinel LST extract to retrain on satellite data without changing the rest of the pipeline."
+}

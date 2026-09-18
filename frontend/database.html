@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Urban Heat AI — Activity Database</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+  <div class="bg-grid"></div>
+  <div class="orb orb-1"></div><div class="orb orb-2"></div>
+
+  <nav class="navbar">
+    <div class="nav-brand"><span class="logo">🌡️</span> Urban Heat AI</div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="database.html" class="active">Database</a>
+    </div>
+    <span class="backend-status offline" id="backend-status">● Checking…</span>
+  </nav>
+
+  <div class="main-container">
+    <div class="db-page-header">
+      <h1 class="db-title">🗄️ Activity Database</h1>
+      <p class="db-subtitle">All user interactions, chatbot conversations, and alert events — logged in real-time by the frontend.</p>
+      <div class="db-controls">
+        <select id="db-filter" class="db-filter-select">
+          <option value="all">All Activities</option>
+          <option value="city_change">City Changes</option>
+          <option value="layer_toggle">Layer Toggles</option>
+          <option value="simulation">Simulations</option>
+          <option value="chat">Chatbot Chats</option>
+          <option value="heat_alert">Heat Alerts</option>
+          <option value="climate_alert">Climate Alerts</option>
+          <option value="page_view">Page Views</option>
+        </select>
+        <button class="db-clear-btn" id="db-clear-btn">🗑️ Clear All</button>
+        <button class="db-export-btn" id="db-export-btn">⬇️ Export CSV</button>
+      </div>
+    </div>
+
+    <div class="db-summary-cards">
+      <div class="db-card"><div class="db-card-val" id="db-total">0</div><div class="db-card-lbl">Total Events</div></div>
+      <div class="db-card"><div class="db-card-val" id="db-chats">0</div><div class="db-card-lbl">Chat Messages</div></div>
+      <div class="db-card"><div class="db-card-val" id="db-alerts">0</div><div class="db-card-lbl">Alerts Triggered</div></div>
+      <div class="db-card"><div class="db-card-val" id="db-cities">0</div><div class="db-card-lbl">Cities Explored</div></div>
+      <div class="db-card"><div class="db-card-val" id="db-sims">0</div><div class="db-card-lbl">Simulations Run</div></div>
+    </div>
+
+    <div class="db-table-wrapper">
+      <table class="db-table">
+        <thead>
+          <tr><th>Timestamp</th><th>Type</th><th>Activity</th><th>Detail</th></tr>
+        </thead>
+        <tbody id="db-tbody">
+          <tr><td colspan="4" class="db-empty">No activity yet. <a href="dashboard.html">Open Dashboard</a> to start!</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="db-section">
+      <h2 class="db-section-title">💬 Chatbot Conversation History</h2>
+      <div id="db-chat-history" class="db-chat-history">
+        <p class="db-empty-msg">No conversations yet. Open dashboard and ask HeatBot!</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>Urban Heat AI v2.0 — IS-14 Hackathon · Delhi, India</footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/effects.js"></script>
+  <script>
+  const ICONS  = {city_change:'🏙️',layer_toggle:'🗺️',simulation:'🧪',chat:'💬',heat_alert:'🚨',climate_alert:'🌍',page_view:'👁️'};
+  const LABELS = {city_change:'City Change',layer_toggle:'Layer Toggle',simulation:'Simulation',chat:'Chat',heat_alert:'Heat Alert',climate_alert:'Climate Alert',page_view:'Page View'};
+
+  // ---- Local fallbacks (used only if the backend is unreachable) ----
+  function getLocalActs()  { try{return JSON.parse(localStorage.getItem('uhai_activity')||'[]');}catch(e){return[];} }
+  function getLocalChats() { try{return JSON.parse(localStorage.getItem('uhai_chat_history')||'[]');}catch(e){return[];} }
+
+  function fmtTime(ts) {
+    const d=new Date(ts);
+    return d.toLocaleDateString('en-IN')+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+
+  // ---- Backend-first data fetch, normalized to the same shape either way ----
+  async function fetchActivities(filter) {
+    const data = await apiFetch('/activity/list?filter=' + encodeURIComponent(filter||'all') + '&limit=1000');
+    if (data && data.events) {
+      return data.events.map(e => ({ timestamp: e.timestamp, type: e.type, activity: e.activity, detail: e.detail }));
+    }
+    const local = getLocalActs();
+    return filter && filter !== 'all' ? local.filter(a => a.type === filter) : local;
+  }
+
+  async function fetchSummary() {
+    const data = await apiFetch('/activity/summary');
+    if (data) return data;
+    const all = getLocalActs();
+    return {
+      total: all.length,
+      chats: all.filter(a=>a.type==='chat').length,
+      alerts: all.filter(a=>['heat_alert','climate_alert'].includes(a.type)).length,
+      cities: new Set(all.filter(a=>a.type==='city_change').map(a=>a.detail)).size,
+      simulations: all.filter(a=>a.type==='simulation').length,
+    };
+  }
+
+  async function fetchChats() {
+    const data = await apiFetch('/activity/chats?limit=200');
+    if (data && data.chats) {
+      return data.chats.map(c => ({ timestamp: c.timestamp, city: c.city, userMsg: c.user_msg, botReply: c.bot_reply }));
+    }
+    return getLocalChats();
+  }
+
+  async function renderTable(filter) {
+    const [filtered, summary] = await Promise.all([fetchActivities(filter), fetchSummary()]);
+    document.getElementById('db-total').textContent  = summary.total;
+    document.getElementById('db-chats').textContent  = summary.chats;
+    document.getElementById('db-alerts').textContent = summary.alerts;
+    document.getElementById('db-cities').textContent = summary.cities;
+    document.getElementById('db-sims').textContent   = summary.simulations;
+    const tbody=document.getElementById('db-tbody');
+    if(!filtered.length){tbody.innerHTML='<tr><td colspan="4" class="db-empty">No '+(filter==='all'?'':LABELS[filter]+' ')+'activity yet.</td></tr>';return;}
+    tbody.innerHTML=filtered.map(a=>`<tr>
+      <td class="db-ts">${fmtTime(a.timestamp)}</td>
+      <td><span class="db-badge db-badge-${a.type}">${ICONS[a.type]||'📊'} ${LABELS[a.type]||a.type}</span></td>
+      <td>${a.activity}</td>
+      <td class="db-detail">${a.detail||'—'}</td>
+    </tr>`).join('');
+  }
+
+  async function renderChats() {
+    const hist=await fetchChats(), el=document.getElementById('db-chat-history');
+    if(!hist.length){el.innerHTML='<p class="db-empty-msg">No conversations yet.</p>';return;}
+    el.innerHTML=hist.map(s=>`
+      <div class="db-chat-session">
+        <div class="db-chat-session-time">${fmtTime(s.timestamp)} · City: ${s.city||'?'}</div>
+        <div class="db-chat-bubble db-chat-user"><span>👤</span><span>${s.userMsg}</span></div>
+        <div class="db-chat-bubble db-chat-bot"><span>🌡️</span><span>${s.botReply}</span></div>
+      </div>`).join('');
+  }
+
+  async function exportCSV() {
+    // Prefer the backend's CSV (covers every device that ever logged to it),
+    // fall back to a client-side CSV built from localStorage if offline.
+    try {
+      const res = await fetch(API_BASE + '/activity/export.csv');
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        Object.assign(document.createElement('a'), {href:url, download:'urban-heat-activity.csv'}).click();
+        URL.revokeObjectURL(url);
+        return;
+      }
+    } catch (e) { /* fall through to local export */ }
+    const acts=getLocalActs(); if(!acts.length){alert('No data.');return;}
+    const rows=[['Timestamp','Type','Activity','Detail']];
+    acts.forEach(a=>rows.push([fmtTime(a.timestamp),a.type,a.activity,a.detail||'']));
+    const csv=rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\n');
+    const url=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    Object.assign(document.createElement('a'),{href:url,download:'urban-heat-activity.csv'}).click();
+    URL.revokeObjectURL(url);
+  }
+
+  document.addEventListener('DOMContentLoaded',async ()=>{
+    logActivity('page_view','Viewed Activity Database','database.html'); // logs to backend + localStorage
+    await renderTable('all'); await renderChats();
+    document.getElementById('db-filter').addEventListener('change',async e=>{ await renderTable(e.target.value); });
+    document.getElementById('db-clear-btn').addEventListener('click',async ()=>{
+      if(confirm('Clear all activity and chat history? This clears the shared backend database for everyone using this server.')){
+        try { await fetch(API_BASE + '/activity/clear', { method: 'DELETE' }); } catch(e) {}
+        localStorage.removeItem('uhai_activity'); localStorage.removeItem('uhai_chat_history');
+        await renderTable('all'); await renderChats();
+      }
+    });
+    document.getElementById('db-export-btn').addEventListener('click',exportCSV);
+  });
+  </script>
+</body>
+</html>
