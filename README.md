@@ -1,6 +1,8 @@
 # 🌡️ Urban Heat AI Platform v2.0
 
 **AI-powered Urban Heat Island detection, public health risk assessment & climate-resilient urban planning for 10 major Indian cities.**
+### 🌍 The Problem: Urban Heat Islands (UHI) in Indian Metros
+Rapid urbanization, dense concrete infrastructure, asphalt pavements, and depleting green cover have created severe **Urban Heat Island (UHI)** microclimates across major Indian cities (e.g., Delhi NCR, Mumbai, Jaipur, Ahmedabad). As a result, dense urban cores trap solar radiation, becoming **5°C to 10°C hotter** than surrounding peri-urban and rural areas.
 
 Built for **IS-14 Hackathon** | FastAPI + Leaflet + Chart.js + HeatBot AI
 
