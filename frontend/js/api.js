@@ -67,6 +67,16 @@ async function fetchHeatMap(city) {
   // null means use client-side generation in map.js
 }
 
+// ---- Seasonal LST trend — backend first (real per-city trend, not a random mock) ----
+async function fetchTrend(city) {
+  return await apiFetch('/heat/trend?city=' + city);
+}
+
+// ---- UHI hotspots — backend first (drives the Heat Alerts panel) ----
+async function fetchHotspots(city, threshold = 2.0) {
+  return await apiFetch(`/heat/hotspots?city=${city}&threshold=${threshold}`);
+}
+
 // ---- Simulation — backend first ----
 async function fetchSimulation(city, scenario, coverage) {
   const path = `/recommendations/simulate?city=${city}&scenario=${scenario}&coverage=${coverage}`;
@@ -78,7 +88,7 @@ async function fetchForecast(city) {
   return await apiFetch('/health/forecast?city=' + city);
 }
 
-// ---- Zone recommendations ----
+// ---- Zone recommendations (real, per-zone, condition-based — not hardcoded per city) ----
 async function fetchRecommendations(city, top = 5) {
   return await apiFetch(`/recommendations/zones?city=${city}&top=${top}`);
 }

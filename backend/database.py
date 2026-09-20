@@ -5,7 +5,7 @@
 # so activity/chat data survives server restarts and is visible from
 # any device that hits this backend, not just the browser that logged it.
 
-
+from __future__ import annotations
 import sqlite3
 import csv
 import io

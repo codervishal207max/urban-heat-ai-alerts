@@ -17,17 +17,15 @@ const CLIMATE_ALERTS = [
   '⚡ Urban electricity demand during heat peaks causes cascading blackouts — decentralized cooling needed'
 ];
 
-const ALERT_ZONES = {
-  delhi:     [{zone:'Zone 2549 (Okhla)',   lst:46.1,risk:'EXTREME'},{zone:'Zone 1832 (Karol Bagh)',lst:43.5,risk:'HIGH'},{zone:'Zone 3011 (Shahdara)',lst:42.8,risk:'HIGH'},{zone:'Zone 0445 (CP)',lst:39.2,risk:'MODERATE'}],
-  mumbai:    [{zone:'Zone 1122 (Kurla E)', lst:41.0,risk:'HIGH'},   {zone:'Zone 0889 (Bhandup)',  lst:39.8,risk:'HIGH'},{zone:'Zone 2001 (Dharavi)', lst:38.5,risk:'MODERATE'},{zone:'Zone 0312 (Andheri)',lst:35.2,risk:'LOW'}],
-  bangalore: [{zone:'Zone 0671 (Whitefield)',lst:38.4,risk:'MODERATE'},{zone:'Zone 1200 (E.City)', lst:37.1,risk:'MODERATE'},{zone:'Zone 0345 (Yelahanka)',lst:34.2,risk:'LOW'},{zone:'Zone 0112 (Indiranagar)',lst:32.6,risk:'LOW'}],
-  chennai:   [{zone:'Zone 1450 (Ambattur)',lst:43.2,risk:'HIGH'},   {zone:'Zone 0980 (Perambur)', lst:41.5,risk:'HIGH'},{zone:'Zone 2100 (Adyar)',   lst:38.0,risk:'MODERATE'},{zone:'Zone 0220 (Besant Nagar)',lst:34.1,risk:'LOW'}],
-  hyderabad: [{zone:'Zone 1800 (Uppal)',   lst:41.8,risk:'HIGH'},   {zone:'Zone 0990 (LB Nagar)',  lst:40.5,risk:'HIGH'},{zone:'Zone 2210 (Ameerpet)',lst:37.4,risk:'MODERATE'},{zone:'Zone 0150 (Madhapur)', lst:34.6,risk:'LOW'}],
-  kolkata:   [{zone:'Zone 2050 (Howrah)',  lst:44.5,risk:'EXTREME'},{zone:'Zone 1340 (Ultadanga)',  lst:42.1,risk:'HIGH'},{zone:'Zone 0780 (Salt Lake)',lst:39.3,risk:'MODERATE'},{zone:'Zone 0320 (Alipore)', lst:35.8,risk:'LOW'}],
-  pune:      [{zone:'Zone 1120 (Hadapsar)',lst:40.0,risk:'HIGH'},   {zone:'Zone 0870 (Lohegaon)',  lst:38.5,risk:'MODERATE'},{zone:'Zone 0440 (Kothrud)',lst:36.2,risk:'MODERATE'},{zone:'Zone 0210 (Pashan)',  lst:33.1,risk:'LOW'}],
-  ahmedabad: [{zone:'Zone 1900 (Naroda)',  lst:45.0,risk:'EXTREME'},{zone:'Zone 1250 (Vatva)',      lst:43.4,risk:'HIGH'},{zone:'Zone 0780 (Maninagar)',lst:40.2,risk:'HIGH'},{zone:'Zone 0340 (SG Hwy)', lst:36.8,risk:'MODERATE'}],
-  jaipur:    [{zone:'Zone 1680 (Sitapura)',lst:45.8,risk:'EXTREME'},{zone:'Zone 1020 (Mansarovar)',  lst:43.9,risk:'HIGH'},{zone:'Zone 0560 (Walled City)',lst:41.2,risk:'HIGH'},{zone:'Zone 0220 (C-Scheme)',lst:37.4,risk:'MODERATE'}],
-  lucknow:   [{zone:'Zone 1750 (Amausi)', lst:45.1,risk:'EXTREME'},{zone:'Zone 1100 (Chowk)',        lst:43.2,risk:'HIGH'},{zone:'Zone 0680 (Gomtinagar)',lst:40.5,risk:'HIGH'},{zone:'Zone 0290 (Hazratganj)',lst:37.1,risk:'MODERATE'}]
+// Maps the backend's 5-level HVI risk_level onto the same visual vocabulary
+// (EXTREME/HIGH/MODERATE/LOW) the Heat Alerts panel already used, so no CSS
+// or markup changes were needed to go from hardcoded to backend-driven.
+const HVI_TO_ALERT_LEVEL = {
+  'Very High': 'EXTREME',
+  'High':      'HIGH',
+  'Moderate':  'MODERATE',
+  'Low':       'LOW',
+  'Very Low':  'LOW'
 };
 
 const RISK_C = {EXTREME:'#dc2626',HIGH:'#f97316',MODERATE:'#eab308',LOW:'#22c55e'};
@@ -40,27 +38,25 @@ const SIM_META = {
   water_bodies:  {icon:'💧',label:'Water Bodies', suffix:'%',lstFactor:0.05,econPerUnit:110}
 };
 
-const CITY_RECS = {
-  delhi:     ['Plant 50,000+ native trees in Okhla, Karol Bagh hotspot zones','Cool roof mandate for all industrial buildings in Shahdara','Water tanker deployment in Very High LST slum clusters','Green corridor along Ring Road & NH-8'],
-  mumbai:    ['Mangrove restoration along eastern coastline (Kurla, Bhandup)','Permeable pavements in dense commercial zones','Rooftop garden mandate for commercial buildings > 500 sqm','Cool pavement pilot on Eastern Express Highway'],
-  bangalore: ['Protect remaining lakes from encroachment','Urban tree canopy program for Electronic City corridor','Cool roofs in Whitefield IT zone','Green buffer zones around Outer Ring Road'],
-  chennai:   ['Sea-breeze corridor planning near Marina Beach area','Tree plantation in Ambattur Industrial Estate','Cool roof for low-income housing in North Chennai','Rainwater harvesting to replenish urban lakes'],
-  hyderabad: ['Hussain Sagar lake restoration for evaporative cooling','Green cover in HITEC City tech corridor','Cool pavements in Old City dense areas','Urban farming on vacant government plots'],
-  kolkata:   ['East Kolkata Wetlands buffer zone protection','Tree plantation in Salt Lake IT sector','Cool roof program for North Kolkata dense housing','Green parks in industrial Howrah areas'],
-  pune:      ['Khadakwasla watershed green belt protection','Cool pavements in Hadapsar IT zone','Urban heat shelter for construction workers','Green terrace program for housing societies'],
-  ahmedabad: ['Shade structure in dense Walled City','Cool roof mandate for Naroda industrial zone','Lake restoration: Kankaria & Vastrapur','Tree plantation along Sabarmati riverfront'],
-  jaipur:    ['Desert-adapted tree species in Pink City outskirts','Cool roof program for Walled City heritage buildings','Shade corridors in Sitapura industrial area','Traditional step-well (baoli) restoration for micro-cooling'],
-  lucknow:   ['Restore Gomti river green corridor','Cool roof in Chowk old-city dense area','Urban park expansion in Trans-Gomti zone','Industrial green buffer in Amausi area']
-};
-
 // ---- Helpers ----
 function setText(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
 function fmt(n, d=1) { return parseFloat(n).toFixed(d); }
 
+// Resolves a display name for a city regardless of which config it's known
+// to — CITY_DATA (mock) first, then map.js's CITY_MAP_CFG, then the raw key.
+// This is what lets switchCityDashboard() work for a city that only exists
+// in the backend's CITY_REGISTRY and hasn't been hand-added to every
+// frontend mock object.
+function cityDisplayName(city) {
+  if (typeof CITY_DATA !== 'undefined' && CITY_DATA[city]) return CITY_DATA[city].name;
+  if (typeof CITY_MAP_CFG !== 'undefined' && CITY_MAP_CFG[city]) return CITY_MAP_CFG[city].name;
+  return city.charAt(0).toUpperCase() + city.slice(1);
+}
+
 // ---- Stats (backend-aware) ----
 async function updateStats(city) {
   const data = (typeof fetchCitySummary === 'function') ? await fetchCitySummary(city) : null;
-  const d = data || (typeof CITY_DATA !== 'undefined' ? CITY_DATA[city] : {});
+  const d = data || (typeof CITY_DATA !== 'undefined' ? CITY_DATA[city] : {}) || {};
   setText('dash-avg-temp',  fmt(d.avgLST || d.avg_lst || 0) + '°C');
   setText('dash-max-temp',  fmt(d.maxLST || d.max_lst || 0) + '°C');
   setText('dash-high-risk', d.highRisk   || d.high_risk_zones || '—');
@@ -91,11 +87,33 @@ async function updateLiveBadge(city) {
   }
 }
 
-// ---- Heat Alerts ----
-function renderAlerts(city) {
+// ---- Heat Alerts — NOW backend-driven (real hotspots per city, not a
+// hand-written per-city zone list). Falls back to "no alerts" gracefully
+// rather than a hardcoded fake list when the backend is unreachable, since
+// a fabricated zone name for an arbitrary city would be misleading. ----
+async function renderAlerts(city) {
   const panel = document.getElementById('heat-alerts-panel');
   if (!panel) return;
-  const zones = ALERT_ZONES[city] || [];
+  panel.innerHTML = '<div class="alert-loading">Loading alerts…</div>';
+
+  const hotspotData = (typeof fetchHotspots === 'function') ? await fetchHotspots(city, 2.0) : null;
+  const hotspots = hotspotData && hotspotData.hotspots ? hotspotData.hotspots : null;
+
+  if (!hotspots || !hotspots.length) {
+    panel.innerHTML = '<div class="alert-loading">No active heat alerts for this city.</div>';
+    const badge = document.getElementById('city-alert-badge');
+    if (badge) badge.classList.add('hidden');
+    return;
+  }
+
+  // Highest UHI intensity first, top 4 — same count the old hardcoded list showed.
+  const top = [...hotspots].sort((a, b) => (b.uhi_intensity||0) - (a.uhi_intensity||0)).slice(0, 4);
+  const zones = top.map(z => ({
+    zone: `Zone ${z.cell_id}`,
+    lst: z.lst,
+    risk: HVI_TO_ALERT_LEVEL[z.risk_level] || 'MODERATE'
+  }));
+
   panel.innerHTML = zones.map(z => `
     <div class="alert-item" style="border-left:3px solid ${RISK_C[z.risk]}">
       <div class="alert-zone">${RISK_E[z.risk]} <b>${z.zone}</b></div>
@@ -104,24 +122,45 @@ function renderAlerts(city) {
         <span>LST: <b>${z.lst}°C</b></span>
       </div>
     </div>`).join('');
+
   const extreme = zones.filter(z => z.risk === 'EXTREME').length;
   const badge = document.getElementById('city-alert-badge');
   if (badge) { badge.textContent = extreme+' EXTREME'; badge.classList.toggle('hidden', extreme === 0); }
-  logActivity('heat_alert', 'Alerts loaded for '+(CITY_DATA&&CITY_DATA[city]?CITY_DATA[city].name:city), city);
+  logActivity('heat_alert', 'Alerts loaded for '+cityDisplayName(city), city);
 }
 
-// ---- Recommendations ----
-function renderRecommendations(city) {
+// ---- Recommendations — NOW backend-driven, per-zone, condition-based
+// (heat/landslide/rain — see recommendation_service.py) instead of one
+// fixed hardcoded list per city. Every city works, including new ones
+// added only to config.py, with no frontend changes needed. ----
+async function renderRecommendations(city) {
   const el = document.getElementById('recommendations-list');
   if (!el) return;
-  const recs = CITY_RECS[city] || [];
-  el.innerHTML = recs.map((r,i) =>
+  el.innerHTML = '<div class="alert-loading">Loading recommendations…</div>';
+
+  const data = (typeof fetchRecommendations === 'function') ? await fetchRecommendations(city, 4) : null;
+  const zoneRecs = data && data.recommendations ? data.recommendations : [];
+
+  if (!zoneRecs.length) {
+    el.innerHTML = '<div class="alert-loading">No priority recommendations right now.</div>';
+    return;
+  }
+
+  // Flatten: one line per zone with its top action, numbered like the old list.
+  const lines = zoneRecs.map(z => {
+    const hazardTag = z.active_hazards && z.active_hazards.length
+      ? ` [${z.active_hazards.join(', ')}]` : '';
+    const action = (z.actions && z.actions[0]) || 'Monitor & maintain current green cover';
+    return `Zone ${z.cell_id}${hazardTag}: ${action}`;
+  });
+
+  el.innerHTML = lines.map((r,i) =>
     `<div class="rec-item"><span class="rec-num">${i+1}</span><span>${r}</span></div>`
   ).join('');
 }
 
 // ---- Charts ----
-function initCharts(city) {
+async function initCharts(city) {
   const mockD = (typeof CITY_DATA !== 'undefined') ? CITY_DATA[city] : {};
   const base  = mockD.avgLST || 36;
 
@@ -144,21 +183,37 @@ function initCharts(city) {
     });
   }
 
+  // Trend chart — NOW backend-driven (real per-city seasonal average from
+  // heat_service.get_trend, anchored to the satellite/live-calibrated base).
+  // Falls back to the old random-jitter mock only if the backend is
+  // unreachable, so the demo never breaks offline.
   const tctx = document.getElementById('trendChart')?.getContext('2d');
   if (tctx) {
     if (trendChart) trendChart.destroy();
-    const offs = [-6,-4,-2,0,3,6,7,5,1,-2,-4,-5];
-    const vals = offs.map(v => +(base+v+(Math.random()-0.5)*0.4).toFixed(1));
+
+    const trendData = (typeof fetchTrend === 'function') ? await fetchTrend(city) : null;
+    let labels, vals, isLive;
+
+    if (trendData && trendData.months && trendData.city_average) {
+      labels = trendData.months;
+      vals = trendData.city_average;
+      isLive = true;
+    } else {
+      const offs = [-6,-4,-2,0,3,6,7,5,1,-2,-4,-5];
+      labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      vals = offs.map(v => +(base+v+(Math.random()-0.5)*0.4).toFixed(1));
+      isLive = false;
+    }
+
     trendChart = new Chart(tctx, {
       type:'line',
-      data:{ labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-        datasets:[{ label:'Avg LST (°C)', data:vals,
+      data:{ labels, datasets:[{ label: isLive ? 'Avg LST (°C) — live' : 'Avg LST (°C) — demo', data:vals,
           borderColor:'#f97316', backgroundColor:'rgba(249,115,22,0.12)',
           pointBackgroundColor:'#f97316', tension:0.4, fill:true, pointRadius:4 }] },
       options:{ responsive:true,
         scales:{
           x:{ ticks:{color:'#94a3b8'}, grid:{color:'rgba(255,255,255,0.05)'} },
-          y:{ ticks:{color:'#94a3b8'}, grid:{color:'rgba(255,255,255,0.05)'}, min:base-9, max:base+10 }
+          y:{ ticks:{color:'#94a3b8'}, grid:{color:'rgba(255,255,255,0.05)'} }
         },
         plugins:{ legend:{ labels:{color:'#e2e8f0'} } }
       }
@@ -221,7 +276,7 @@ async function runSimulation() {
       <div class="sim-result-card">
         <div class="sim-result-icon">${meta.icon}</div>
         <div class="sim-result-label">${meta.label} ${coverage}${meta.suffix}</div>
-        <div class="sim-result-city">${(CITY_DATA&&CITY_DATA[currentCity]?CITY_DATA[currentCity].name:currentCity)}</div>
+        <div class="sim-result-city">${cityDisplayName(currentCity)}</div>
       </div>
       <div class="sim-metrics">
         <div class="sim-metric"><span class="sim-metric-label">Current Avg LST</span><span class="sim-metric-val">${avgLST}°C</span></div>
@@ -234,7 +289,7 @@ async function runSimulation() {
     </div>
     <div class="sim-note">💡 ${result?'Live backend simulation':'Demo simulation — start backend for ML-based results'}. Implement via city-level policy for maximum impact.</div>`;
   modal.classList.add('open');
-  logActivity('simulation', meta.label+' '+coverage+meta.suffix+' on '+(CITY_DATA&&CITY_DATA[currentCity]?CITY_DATA[currentCity].name:currentCity), 'LST drop: '+lstDrop+'°C');
+  logActivity('simulation', meta.label+' '+coverage+meta.suffix+' on '+cityDisplayName(currentCity), 'LST drop: '+lstDrop+'°C');
   showToast('🧪 Simulation: −'+lstDrop+'°C projected');
 }
 
@@ -245,28 +300,32 @@ function downloadReport() {
   const url = API_BASE + `/report/generate?city=${currentCity}&scenario=${scenario}&coverage=${coverage}`;
   window.open(url, '_blank');
   showToast('📄 Generating policy report…');
-  logActivity('report_download', 'Downloaded policy report for ' +
-    (CITY_DATA && CITY_DATA[currentCity] ? CITY_DATA[currentCity].name : currentCity), scenario + ' ' + coverage + '%');
+  logActivity('report_download', 'Downloaded policy report for ' + cityDisplayName(currentCity), scenario + ' ' + coverage + '%');
 }
 
 // ---- City Switcher ----
+// NOTE: previously gated on `if (!CITY_DATA || !CITY_DATA[city]) return;` —
+// that silently no-op'd for any city not hand-added to the CITY_DATA mock
+// object, which would have blocked every newly-added city (config.py) from
+// working in the dashboard. Removed: every panel below already has its own
+// backend-first-then-fallback logic, so there's nothing left that requires
+// CITY_DATA to contain the city.
 async function switchCityDashboard(city) {
-  if (!CITY_DATA || !CITY_DATA[city]) return;
   currentCity = city;
   window.currentCity = city;
   await updateStats(city);
-  renderAlerts(city);
-  renderRecommendations(city);
-  initCharts(city);
+  await renderAlerts(city);
+  await renderRecommendations(city);
+  await initCharts(city);
   if (typeof switchCity === 'function') switchCity(city);
-  showToast('🏙️ Switched to '+(CITY_DATA[city]?.name||city));
-  logActivity('city_change','Switched to '+(CITY_DATA[city]?.name||city), city);
+  showToast('🏙️ Switched to '+cityDisplayName(city));
+  logActivity('city_change','Switched to '+cityDisplayName(city), city);
 }
 
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', async () => {
   const urlCity = new URLSearchParams(window.location.search).get('city');
-  if (urlCity && typeof CITY_DATA !== 'undefined' && CITY_DATA[urlCity]) currentCity = urlCity;
+  if (urlCity) currentCity = urlCity;
   window.currentCity = currentCity;
 
   const sel = document.getElementById('city-select');
@@ -282,8 +341,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('climate-modal-close')?.addEventListener('click', () => document.getElementById('climate-modal').classList.remove('open'));
 
   await updateStats(currentCity);
-  renderAlerts(currentCity);
-  renderRecommendations(currentCity);
-  initCharts(currentCity);
+  await renderAlerts(currentCity);
+  await renderRecommendations(currentCity);
+  await initCharts(currentCity);
   initClimateBanner();
 });

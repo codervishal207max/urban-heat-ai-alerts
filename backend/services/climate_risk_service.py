@@ -7,6 +7,7 @@
 # neighbouring cells. Falls through to safe defaults (0 rainfall, 0 slope) on
 # any failure, so heat data never breaks because of this.
 
+from __future__ import annotations
 import time
 import math
 import requests

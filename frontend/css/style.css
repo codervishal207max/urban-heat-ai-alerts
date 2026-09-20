@@ -141,8 +141,8 @@ section h2 { font-size:1.8rem; font-weight:800; margin-bottom:10px; }
 .ml-stats { display:flex; gap:20px; justify-content:center; flex-wrap:wrap; margin-bottom:32px; }
 .ml-endpoint { margin-top:24px; text-align:center; color:var(--text2); font-size:0.85rem; }
 .ml-endpoint code { background:rgba(0,0,0,0.35); padding:3px 10px; border-radius:6px; color:var(--accent2); }
-.qs-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; }
-.qs-card { display:flex; gap:16px; align-items:flex-start; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+.qs-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:20px; }
+.qs-card { display:flex; gap:16px; align-items:flex-start; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; flex:1 1 250px; max-width:320px; }
 .qs-num { flex-shrink:0; width:36px; height:36px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; }
 .qs-card h4 { font-size:0.9rem; font-weight:700; margin-bottom:6px; }
 .qs-card code { font-size:0.8rem; background:rgba(0,0,0,0.35); padding:3px 8px; border-radius:5px; display:block; margin-top:4px; }
