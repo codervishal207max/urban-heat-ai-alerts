@@ -8,6 +8,7 @@
 #   - Groq API is unreachable / errors / times out
 # This keeps the whole app demoable even with no internet / no key.
 
+from typing import Optional
 import os
 import httpx
 from backend.config import CITY_REGISTRY, DEFAULT_CITY
@@ -80,7 +81,7 @@ def is_configured() -> bool:
     return bool(GROQ_API_KEY)
 
 
-async def ask_heatbot(message: str, city: str = DEFAULT_CITY) -> dict | None:
+async def ask_heatbot(message: str, city: str = DEFAULT_CITY) -> Optional[dict]:
     """
     Returns {"reply": str, "model": str, "grounded_on": {...}} on success,
     or None if the LLM path isn't available (caller should fall back).

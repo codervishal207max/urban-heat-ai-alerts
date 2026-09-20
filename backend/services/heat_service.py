@@ -1,4 +1,5 @@
 # Urban Heat AI v2 — Heat Data Service
+from typing import List, Dict, Tuple
 import math, random
 from backend.config import CITY_REGISTRY, GRID_ROWS, GRID_COLS, LAT_STEP, LON_STEP
 from backend.utils.helpers import seeded_noise, compute_hvi, risk_level_from_hvi
@@ -20,7 +21,7 @@ _CITY_HEAT = {
 }
 
 
-def _base_lst_for_city(city: str, heat: dict) -> tuple[float, dict]:
+def _base_lst_for_city(city: str, heat: dict) -> Tuple[float, dict]:
     """
     Anchors the synthetic grid's baseline LST to the most real reading available,
     in priority order:
@@ -80,7 +81,7 @@ def get_calibration_info(city: str) -> dict:
     return {"city": city, **meta}
 
 
-def _generate_grid(city: str) -> list[dict]:
+def _generate_grid(city: str) -> List[Dict]:
     cfg  = CITY_REGISTRY.get(city, CITY_REGISTRY["delhi"])
     heat = _CITY_HEAT.get(city, {"base": 32, "hf": 8})
     clat, clon = cfg["lat"], cfg["lon"]
@@ -141,7 +142,7 @@ def get_heat_map(city: str) -> dict:
     return {"type": "FeatureCollection", "features": features, "city": city}
 
 
-def get_hotspots(city: str, threshold: float = 2.0) -> list[dict]:
+def get_hotspots(city: str, threshold: float = 2.0) -> List[Dict]:
     return [z for z in _generate_grid(city) if z["uhi_intensity"] >= threshold]
 
 

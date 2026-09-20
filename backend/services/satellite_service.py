@@ -21,11 +21,11 @@
 # This gives a genuinely real, independently-verifiable number today with
 # zero setup; swapping in GEE later only means replacing this one file.
 
+
+from typing import Dict, Optional
 import time
 from datetime import datetime, timedelta
-
 import requests
-
 from backend.config import CITY_REGISTRY
 
 POWER_URL = "https://power.larc.nasa.gov/api/temporal/daily/point"
@@ -33,10 +33,10 @@ REQUEST_TIMEOUT_SEC = 6
 CACHE_TTL_SEC = 6 * 3600  # 6h — POWER's own data only refreshes every few days anyway
 LOOKBACK_DAYS = 10        # enough to ride out POWER's publication latency
 
-_cache: dict[str, dict] = {}
+_cache: Dict[str, Dict] = {}
 
 
-def fetch_real_lst(city_key: str) -> dict | None:
+def fetch_real_lst(city_key: str) -> Optional[Dict]:
     """
     Returns {lst_c, obs_date, source, fetched_at} using NASA POWER's Earth
     Skin Temperature (TS) — a real satellite-informed reading — for the

@@ -3,6 +3,7 @@
 # and caches it briefly so the synthetic heat grid can be anchored to real
 # ground conditions instead of being purely formula-generated.
 
+from typing import Dict, Optional
 import time
 import requests
 from backend.config import CITY_REGISTRY
@@ -11,10 +12,10 @@ OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 REQUEST_TIMEOUT_SEC = 2.5
 CACHE_TTL_SEC = 900  # 15 minutes — enough to stay "live" without hammering the API
 
-_cache: dict[str, dict] = {}
+_cache: Dict[str, Dict] = {}
 
 
-def fetch_live_weather(city_key: str) -> dict | None:
+def fetch_live_weather(city_key: str) -> Optional[Dict]:
     """
     Returns {temp_c, humidity_pct, apparent_temp_c, fetched_at, source}
     for the given city, or None if the city is unknown or the request fails.
