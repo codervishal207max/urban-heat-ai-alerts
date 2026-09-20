@@ -5,6 +5,7 @@
 # so activity/chat data survives server restarts and is visible from
 # any device that hits this backend, not just the browser that logged it.
 
+
 import sqlite3
 import csv
 import io
@@ -68,7 +69,7 @@ def log_activity(type_: str, activity: str, detail: str = "", city: str = "") ->
                 "detail": detail, "city": city}
 
 
-def list_activity(filter_type: str = "all", limit: int = 500) -> list[dict]:
+def list_activity(filter_type: str = "all", limit: int = 500) -> list[dict] | None:
     with get_conn() as conn:
         if filter_type and filter_type != "all":
             rows = conn.execute(
@@ -126,7 +127,7 @@ def log_chat(city: str, user_msg: str, bot_reply: str, source: str = "keyword") 
                 "user_msg": user_msg, "bot_reply": bot_reply, "source": source}
 
 
-def list_chats(limit: int = 200) -> list[dict]:
+def list_chats(limit: int = 200) -> list[dict] | None:
     with get_conn() as conn:
         rows = conn.execute(
             "SELECT * FROM chat_history ORDER BY id DESC LIMIT ?", (limit,)

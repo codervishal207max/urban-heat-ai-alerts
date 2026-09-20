@@ -32,3 +32,4 @@ def hotspots(
 @router.get("/trend", summary="Monthly LST seasonal trend")
 def trend(city: str = Query(DEFAULT_CITY)):
     return get_trend(city)
+

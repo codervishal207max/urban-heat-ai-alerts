@@ -42,6 +42,20 @@ def demo(city: str = Query(DEFAULT_CITY)):
         "channels": alert_channels(),
     }
 
+# backend/api/heat.py ya alerts.py me
+@router.get("/rain-map")
+def rain_map(city: str = Query(DEFAULT_CITY)):
+    zones = _generate_grid(city)
+    return {"zones": [{"cell_id": z["cell_id"], "lat": z["lat"], "lon": z["lon"],
+                        "rainfall_mm": z["rainfall_48h_mm"]} for z in zones]}
+
+@router.get("/landslide-map")
+def landslide_map(city: str = Query(DEFAULT_CITY)):
+    zones = _generate_grid(city)
+    return {"zones": [{"cell_id": z["cell_id"], "lat": z["lat"], "lon": z["lon"],
+                        "risk_score": z["landslide_risk_score"]} for z in zones]}
+
+
 
 @router.post("/test-send", summary="Force-fire one demo alert (mock SMS+WhatsApp) for the hottest zone")
 def test_send(city: str = Query(DEFAULT_CITY)):

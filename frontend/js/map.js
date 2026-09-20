@@ -33,6 +33,15 @@ function ndviColor(v) {
 }
 function riskColor(lvl) { return RISK_COLORS[lvl] || '#94a3b8'; }
 
+// Rainfall (mm, 48h cumulative)
+function rainColor(mm) {
+  return mm>50?'#1e3a8a':mm>20?'#3b82f6':mm>5?'#93c5fd':'#e0f2fe';
+}
+// Landslide risk level
+function landslideColor(lvl) {
+  return lvl==='High'?'#dc2626':lvl==='Moderate'?'#f59e0b':'#22c55e';
+}
+
 // ---- Build client-side grid (fallback when backend offline) ----
 function buildClientGrid(cityKey) {
   const cfg = CITY_MAP_CFG[cityKey] || CITY_MAP_CFG.delhi;
@@ -56,10 +65,21 @@ function buildClientGrid(cityKey) {
                     + 0.20*Math.max(0,uhi)/8 + 0.15*(1-ndvi)));
       const riskLevels = ['Very Low','Low','Moderate','High','Very High'];
       const risk = riskLevels[Math.min(4, Math.floor(hvi*5))];
+
+      // Synthetic rainfall + landslide risk for offline fallback (mirrors
+      // the backend's climate_risk_service heuristic, using deterministic
+      // noise so the client-side grid stays consistent across reloads).
+      const rainfall = Math.max(0, 15 + Math.sin(id*3.1)*20);
+      const slopeDeg = Math.max(0, urban < 0.3 ? (1-urban)*30 : 5);
+      const landslideScore = Math.min(1, 0.5*(rainfall/100) + 0.3*(slopeDeg/45) + 0.2*(1-ndvi));
+      const landslideLevel = landslideScore>0.7?'High':landslideScore>0.4?'Moderate':'Low';
+
       features.push({
         type:'Feature',
         properties:{ cell_id:id, lst:+lst.toFixed(2), ndvi:+ndvi.toFixed(3),
-          uhi_intensity:uhi, population_density:pop, hvi:+hvi.toFixed(3), risk_level:risk },
+          uhi_intensity:uhi, population_density:pop, hvi:+hvi.toFixed(3), risk_level:risk,
+          rainfall_48h_mm:+rainfall.toFixed(1), slope_deg:+slopeDeg.toFixed(1),
+          landslide_risk_score:+landslideScore.toFixed(3), landslide_risk_level:landslideLevel },
         geometry:{ type:'Polygon', coordinates:[[
           [lon-0.008,lat-0.005],[lon+0.008,lat-0.005],
           [lon+0.008,lat+0.005],[lon-0.008,lat+0.005],[lon-0.008,lat-0.005]
@@ -80,7 +100,9 @@ function popupHTML(p) {
     🔥 UHI: +${Math.max(0,p.uhi_intensity).toFixed(1)}°C<br>
     👥 Pop: ${(p.population_density||0).toLocaleString()}<br>
     ${ p.hvi   ? `📊 HVI: ${p.hvi}<br>` : '' }
-    ${ p.risk_level ? `⚠️ Risk: <b style="color:${rc}">${p.risk_level}</b>` : '' }
+    ${ p.risk_level ? `⚠️ Risk: <b style="color:${rc}">${p.risk_level}</b><br>` : '' }
+    ${ p.rainfall_48h_mm !== undefined ? `🌧️ Rain (48h): ${p.rainfall_48h_mm} mm<br>` : '' }
+    ${ p.landslide_risk_level ? `⛰️ Landslide: <b style="color:${landslideColor(p.landslide_risk_level)}">${p.landslide_risk_level}</b>` : '' }
   </div>`;
 }
 
@@ -167,6 +189,18 @@ async function loadLayers(cityKey) {
     onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
   });
 
+  // NEW — rain layer (48h cumulative rainfall per zone)
+  mapLayers.rain = L.geoJSON({ type:'FeatureCollection', features: feats }, {
+    style: f => ({ fillColor:rainColor(f.properties.rainfall_48h_mm||0), weight:0.3, color:'#1e3a8a', fillOpacity:0.68 }),
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+  });
+
+  // NEW — landslide risk layer
+  mapLayers.landslide = L.geoJSON({ type:'FeatureCollection', features: feats }, {
+    style: f => ({ fillColor:landslideColor(f.properties.landslide_risk_level||'Low'), weight:0.3, color:'#333', fillOpacity:0.68 }),
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+  });
+
   const heatCb = document.getElementById('layer-heat');
   if (heatCb && !heatCb.checked) map.removeLayer(mapLayers.heat);
 
@@ -190,10 +224,12 @@ function switchCity(cityKey) {
 
 function bindToggles() {
   [
-    ['layer-heat',    'heat',    '🔥 Heat Map'],
-    ['layer-health',  'health',  '⚠️ Health Risk'],
-    ['layer-ndvi',    'ndvi',    '🌿 NDVI'],
-    ['layer-hotspots','hotspots','📍 Hotspots']
+    ['layer-heat',      'heat',      '🔥 Heat Map'],
+    ['layer-health',    'health',    '⚠️ Health Risk'],
+    ['layer-ndvi',      'ndvi',      '🌿 NDVI'],
+    ['layer-hotspots',  'hotspots',  '📍 Hotspots'],
+    ['layer-rain',      'rain',      '🌧️ Rain Map'],
+    ['layer-landslide', 'landslide', '⛰️ Landslide Risk']
   ].forEach(([id,key,label]) => {
     const cb = document.getElementById(id);
     if (!cb) return;

@@ -5,6 +5,8 @@ from backend.config import CITY_REGISTRY, GRID_ROWS, GRID_COLS, LAT_STEP, LON_ST
 from backend.utils.helpers import seeded_noise, compute_hvi, risk_level_from_hvi
 from backend.services.weather_service import fetch_live_weather
 from backend.services.satellite_service import fetch_real_lst
+from backend.services.climate_risk_service import (fetch_grid_rainfall, fetch_grid_elevation, compute_slope_grid, calculate_landslide_risk
+)
 
 # Base LST and heat-factor per city
 _CITY_HEAT = {
@@ -80,7 +82,6 @@ def get_calibration_info(city: str) -> dict:
     _, meta = _base_lst_for_city(city, heat)
     return {"city": city, **meta}
 
-
 def _generate_grid(city: str) -> List[Dict]:
     cfg  = CITY_REGISTRY.get(city, CITY_REGISTRY["delhi"])
     heat = _CITY_HEAT.get(city, {"base": 32, "hf": 8})
@@ -99,15 +100,9 @@ def _generate_grid(city: str) -> List[Dict]:
             urban = math.exp(-2.2 * d)
             noise = seeded_noise(i, j, seed)
 
-            # NDVI has a typical value for a given built-up density (urban), plus an
-            # independent component (a park in a dense area, a bare lot in a green
-            # suburb) — decorrelating it from urban_index so the ML model can learn
-            # vegetation's OWN cooling effect instead of just re-learning urban_index.
             ndvi_base = 0.65 - 0.5 * urban
             ndvi_noise = seeded_noise(i + 41, j + 67, seed) * 0.15
             ndvi = min(0.85, max(0.02, ndvi_base + ndvi_noise))
-            # Real UHI science: vegetation cools independent of built-up density
-            # (~1.2°C per 0.1 NDVI, matching the HeatBot's own stated figure).
             ndvi_cooling = (ndvi - ndvi_base) * -12
 
             lst   = base_lst + heat["hf"] * urban + noise * 0.8 + ndvi_cooling
@@ -123,6 +118,25 @@ def _generate_grid(city: str) -> List[Dict]:
                 "hvi": hvi, "risk_level": risk,
                 "urban_index": round(urban, 4),
             })
+
+    # --- NEW: batch-fetch rainfall + elevation for the whole grid, then
+    # derive slope + landslide risk per zone ---
+    rainfall_values = fetch_grid_rainfall(city, zones)
+    elevation_values = fetch_grid_elevation(city, zones)
+    slope_values = compute_slope_grid(elevation_values, GRID_ROWS, GRID_COLS, LAT_STEP)
+
+    for idx, z in enumerate(zones):
+        rain = rainfall_values[idx] if idx < len(rainfall_values) else 0.0
+        elev = elevation_values[idx] if idx < len(elevation_values) else 0.0
+        slope = slope_values[idx] if idx < len(slope_values) else 0.0
+        landslide = calculate_landslide_risk(rain, slope, z["ndvi"])
+
+        z["rainfall_48h_mm"] = rain
+        z["elevation_m"] = elev
+        z["slope_deg"] = slope
+        z["landslide_risk_score"] = landslide["risk_score"]
+        z["landslide_risk_level"] = landslide["risk_level"]
+
     return zones
 
 
