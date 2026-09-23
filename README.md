@@ -268,3 +268,40 @@ fully in mock mode — nothing breaks.
 
 Env knobs: `ALERT_HVI_THRESHOLD` (0.80), `ALERT_COOLDOWN_MINUTES` (60),
 `ALERT_MAX_PER_CHECK` (5), `ALERT_LANGUAGE` (both|hindi|english).
+
+## 🤖 HeatBot — AI Chatbot Features
+
+HeatBot platform ke andar embedded ek smart assistant hai jo teen tareeko se answer deta hai:
+
+### 1. 🌡️ Live Heat Data (Groq LLM)
+City ke live LST, UHI, HVI data ke sawaal poocho:
+- "What is the UHI intensity in Delhi?"
+- "Health risks in high temperature zones?"
+- "Best cooling solutions for my city?"
+
+### 2. 🎨 AI Image Generation (Hugging Face)
+"generate image of..." ya "draw..." keywords use karke AI image banwao:
+
+**Example prompts:**
+generate image of a green cool city with parks
+generate image of a futuristic solar powered building
+generate image of trees planted along a busy road
+generate image of a hot desert city with no trees
+draw a cooling center with air conditioning for heat wave relief
+generate image of a rooftop garden reducing urban heat
+generate image of children playing in a shaded park during summer
+draw an urban heat island effect diagram over a city skyline
+generate image of white reflective cool roofs on buildings
+generate image of a water fountain cooling a busy street
+
+
+### 3. 📖 Live Wikipedia Facts
+"wikipedia..." ya "who is/what is..." keywords use karke live factual info lao:
+
+**Example prompts:**
+wikipedia heat wave
+wikipedia urban heat island
+wikipedia climate change in India
+who is the founder of NASA
+what is the history of air conditioning
+tell me about monsoon in India 
