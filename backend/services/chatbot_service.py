@@ -10,23 +10,21 @@
 
 from typing import Optional
 import os
+import re
 import httpx
 from backend.config import CITY_REGISTRY, DEFAULT_CITY
 from backend.services.heat_service import _generate_grid, get_calibration_info
 from backend.services.health_service import get_vulnerable_populations
+from backend.services import image_service, wikipedia_service
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
 REQUEST_TIMEOUT_SEC = 8
 
 if not GROQ_API_KEY:
     print("[HeatBot/Groq] WARNING: GROQ_API_KEY not set — HeatBot will use the offline keyword bot only. "
           "Add it to your .env file (see .env.example) and restart the server.")
-
-# Keep a short rolling history per (city) session isn't needed for a hackathon
-# demo — each request is grounded fresh from live data instead, which is
-# actually more reliable than trusting client-sent history.
 
 SYSTEM_PROMPT_TEMPLATE = """You are HeatBot, the AI assistant embedded in the Urban Heat AI platform \
 — a real-time urban heat island analytics tool for Indian cities.
@@ -81,16 +79,78 @@ def is_configured() -> bool:
     return bool(GROQ_API_KEY)
 
 
+# ── Intent detection ──────────────────────────────────────────────────────
+IMAGE_TRIGGERS = [
+    "generate image", "generate an image", "create image", "create an image",
+    "make an image", "draw", "image banao", "photo banao", "picture banao",
+    "tasveer banao", "chitra banao", "image generate", "banao image", "img banao",
+]
+WIKI_TRIGGERS = [
+    "wikipedia", "wiki ", " wiki", "who is", "who was", "what is the history",
+    "live data", "latest info", "current info", "real time info", "real-time info",
+    "tell me about", "kaun hai", "kya hai wikipedia",
+]
+
+
+def _wants_image(q: str) -> bool:
+    return any(t in q for t in IMAGE_TRIGGERS)
+
+
+def _wants_wikipedia(q: str) -> bool:
+    return any(t in q for t in WIKI_TRIGGERS)
+
+
+def _strip_image_trigger(message: str) -> str:
+    q = message
+    for t in IMAGE_TRIGGERS:
+        q = re.sub(re.escape(t), "", q, flags=re.IGNORECASE)
+    q = q.strip(" :,-")
+    return q if q else message
+
+
 async def ask_heatbot(message: str, city: str = DEFAULT_CITY) -> Optional[dict]:
     """
-    Returns {"reply": str, "model": str, "grounded_on": {...}} on success,
-    or None if the LLM path isn't available (caller should fall back).
+    Returns one of:
+      {"type": "image", "image_base64": str, "model": str, "prompt": str}
+      {"type": "text", "reply": str, "model": str, "grounded_on": {...}, "wiki_source": {...}|None}
+      None  — nothing available, caller falls back to the offline keyword bot.
     """
+    q = message.lower().strip()
+
+    # 1) Image-generation intent — routed to Hugging Face, independent of Groq.
+    if _wants_image(q):
+        prompt = _strip_image_trigger(message)
+        img = await image_service.generate_image(prompt)
+        if img:
+            return {"type": "image", **img}
+        return {
+            "type": "text",
+            "reply": "⚠️ Image generation abhi available nahi hai — HF_API_KEY check karo .env file mein, "
+                     "ya model load ho raha hoga, thodi der baad try karo.",
+            "model": "system",
+            "grounded_on": None,
+            "wiki_source": None,
+        }
+
     if not GROQ_API_KEY:
         return None
 
     ctx = _build_context(city)
     system_prompt = SYSTEM_PROMPT_TEMPLATE.format(**ctx)
+
+    # 2) Wikipedia-grounded intent — fetch a live summary and hand it to the LLM
+    #    as extra context so factual / "who is / what is X" questions outside
+    #    the platform's own heat data still get accurate, current answers.
+    wiki_source = None
+    if _wants_wikipedia(q):
+        wiki = await wikipedia_service.get_summary(message)
+        if wiki:
+            wiki_source = wiki
+            system_prompt += (
+                f"\n\nLIVE WIKIPEDIA CONTEXT — \"{wiki['title']}\":\n{wiki['extract']}\n"
+                "Use this only if it's relevant to the user's question, alongside the live data snapshot above. "
+                "Mention that the info is sourced from Wikipedia."
+            )
 
     payload = {
         "model": GROQ_MODEL,
@@ -112,10 +172,15 @@ async def ask_heatbot(message: str, city: str = DEFAULT_CITY) -> Optional[dict]:
             resp.raise_for_status()
             data = resp.json()
         reply = data["choices"][0]["message"]["content"].strip()
-        return {"reply": reply, "model": GROQ_MODEL, "grounded_on": ctx}
+        return {"type": "text", "reply": reply, "model": GROQ_MODEL, "grounded_on": ctx, "wiki_source": wiki_source}
     except Exception as e:
-        # Groq down / rate-limited / bad key / network issue — caller falls
-        # back to the keyword bot so the demo never breaks. Printed so it's
-        # visible in the terminal instead of failing silently.
         print(f"[HeatBot/Groq] LLM call failed, falling back to keyword bot: {e!r}")
-        return None
+        if wiki_source:
+            return {
+                "type": "text",
+                "reply": f"📖 **{wiki_source['title']}** (Wikipedia se):\n\n{wiki_source['extract']}",
+                "model": "wikipedia-direct",
+                "grounded_on": None,
+                "wiki_source": wiki_source,
+            }
+        return None 

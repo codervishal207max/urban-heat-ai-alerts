@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from backend.config import DEFAULT_CITY
 from backend.services.chatbot_service import ask_heatbot, is_configured
+from backend.services import image_service
 
 router = APIRouter(prefix="/chat", tags=["HeatBot"])
 
@@ -14,13 +15,33 @@ class ChatRequest(BaseModel):
 
 @router.get("/status", summary="Is the LLM-backed HeatBot configured?")
 async def chat_status():
-    return {"llm_enabled": is_configured(), "provider": "groq" if is_configured() else None}
+    return {
+        "llm_enabled": is_configured(),
+        "provider": "groq" if is_configured() else None,
+        "image_gen_enabled": image_service.is_configured(),
+        "wikipedia_enabled": True,
+    }
 
 
-@router.post("/ask", summary="Ask HeatBot — Groq LLM grounded in live city data")
+@router.post("/ask", summary="Ask HeatBot — Groq LLM, Wikipedia-grounded facts, and HF image generation")
 async def chat_ask(body: ChatRequest):
     result = await ask_heatbot(body.message, body.city)
     if result is None:
-        # Signals the frontend to fall back to the local keyword bot.
-        return {"ok": False, "reply": None}
-    return {"ok": True, "reply": result["reply"], "model": result["model"]}
+        return {"ok": False, "type": "text", "reply": None}
+
+    if result.get("type") == "image":
+        return {
+            "ok": True,
+            "type": "image",
+            "image_base64": result["image_base64"],
+            "model": result["model"],
+            "prompt": result["prompt"],
+        }
+
+    return {
+        "ok": True,
+        "type": "text",
+        "reply": result["reply"],
+        "model": result["model"],
+        "wiki_source": result.get("wiki_source"),
+    }
