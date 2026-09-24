@@ -136,31 +136,39 @@ function showToast(msg, type) {
 // very first request after the server starts can be slower than BACKEND_TIMEOUT
 // (thread-pool/OS warm-up, antivirus scanning freshly-touched files, etc.) even
 // though the backend is completely healthy. A single failed check used to leave
-// the badge stuck on "Demo Mode (offline)" for the whole session even while every
-// other panel was clearly getting real backend data. Retrying, and re-checking
-// periodically afterwards, makes the badge self-heal instead of latching onto
-// one unlucky first attempt.
+// the app stuck thinking it's offline for the whole session even while every
+// other panel was clearly getting real backend data. Retrying makes this
+// self-heal instead of latching onto one unlucky first attempt.
+//
+// No persistent badge anymore — just a ONE-TIME toast the moment the backend
+// is confirmed reachable. `_backendToastShown` guards against it firing twice
+// (e.g. once from the initial check, once from the periodic self-heal below).
+let _backendToastShown = false;
+window.backendOnline = false;
+
 async function checkBackendStatus(attempt = 1) {
   const data = await apiFetch('/api/status');
-  const el = document.getElementById('backend-status');
   if (data) {
-    if (el) { el.textContent = '● Backend Connected'; el.className = 'backend-status online'; }
+    window.backendOnline = true;
+    if (!_backendToastShown) {
+      _backendToastShown = true;
+      if (typeof showToast === 'function') showToast('✅ Backend Connected', 'success');
+    }
     return true;
   }
   if (attempt < 3) {
     await new Promise(r => setTimeout(r, 800 * attempt));
     return checkBackendStatus(attempt + 1);
   }
-  if (el) { el.textContent = '● Demo Mode (offline)'; el.className = 'backend-status offline'; }
+  window.backendOnline = false;
   return false;
 }
 
-// Self-heal: if the badge ever lands on "offline", keep quietly re-checking in
-// the background so it flips to "Backend Connected" the moment the server
-// answers, without the user needing to reload the page.
-setInterval(async () => {
-  const el = document.getElementById('backend-status');
-  if (el && el.classList.contains('offline')) checkBackendStatus();
+// Self-heal: if the backend wasn't reachable yet, keep quietly re-checking in
+// the background — the one-time toast above fires whenever it first succeeds,
+// without the user needing to reload the page.
+setInterval(() => {
+  if (!window.backendOnline) checkBackendStatus();
 }, 15000);
 
 // Log page view

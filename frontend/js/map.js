@@ -41,6 +41,24 @@ function rainColor(mm) {
 function landslideColor(lvl) {
   return lvl==='High'?'#dc2626':lvl==='Moderate'?'#f59e0b':'#22c55e';
 }
+// Land Use classification — from REAL per-zone urban_index + ndvi (same
+// fields already computed by _generate_grid on the backend), not a
+// separate fabricated dataset. Simple threshold rule mirroring the
+// Land Use & Surface Analysis donut's own logic in dashboard.js.
+function landUseColor(props) {
+  const urban = props.urban_index || 0;
+  const ndvi = props.ndvi || 0;
+  if (urban > 0.5) return '#dc2626';       // Built-up
+  if (ndvi > 0.4) return '#22c55e';        // Vegetation
+  return '#eab308';                        // Open Land
+}
+function landUseLabel(props) {
+  const urban = props.urban_index || 0;
+  const ndvi = props.ndvi || 0;
+  if (urban > 0.5) return 'Built-up';
+  if (ndvi > 0.4) return 'Vegetation';
+  return 'Open Land';
+}
 
 // ---- Build client-side grid (fallback when backend offline) ----
 function buildClientGrid(cityKey) {
@@ -76,7 +94,7 @@ function buildClientGrid(cityKey) {
 
       features.push({
         type:'Feature',
-        properties:{ cell_id:id, lst:+lst.toFixed(2), ndvi:+ndvi.toFixed(3),
+        properties:{ cell_id:id, lst:+lst.toFixed(2), ndvi:+ndvi.toFixed(3), urban_index:+urban.toFixed(4),
           uhi_intensity:uhi, population_density:pop, hvi:+hvi.toFixed(3), risk_level:risk,
           rainfall_48h_mm:+rainfall.toFixed(1), slope_deg:+slopeDeg.toFixed(1),
           landslide_risk_score:+landslideScore.toFixed(3), landslide_risk_level:landslideLevel },
@@ -201,6 +219,14 @@ async function loadLayers(cityKey) {
     onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
   });
 
+  // NEW — land use layer (real urban_index/ndvi classification per zone,
+  // matching the Land Use & Surface Analysis donut's own logic)
+  mapLayers.landuse = L.geoJSON({ type:'FeatureCollection', features: feats }, {
+    style: f => ({ fillColor:landUseColor(f.properties), weight:0.3, color:'#333', fillOpacity:0.68 }),
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties) +
+      `<div style="margin-top:4px;color:#e2e8f0">🗺️ Land use: <b>${landUseLabel(f.properties)}</b></div>`)
+  });
+
   const heatCb = document.getElementById('layer-heat');
   if (heatCb && !heatCb.checked) map.removeLayer(mapLayers.heat);
 
@@ -224,9 +250,10 @@ function switchCity(cityKey) {
 
 function bindToggles() {
   [
-    ['layer-heat',      'heat',      '🔥 Heat Map'],
-    ['layer-health',    'health',    '⚠️ Health Risk'],
+    ['layer-heat',      'heat',      '🌡️ Land Surface Temp'],
+    ['layer-health',    'health',    '⚠️ Heat Risk'],
     ['layer-ndvi',      'ndvi',      '🌿 NDVI'],
+    ['layer-landuse',   'landuse',   '🗺️ Land Use'],
     ['layer-hotspots',  'hotspots',  '📍 Hotspots'],
     ['layer-rain',      'rain',      '🌧️ Rain Map'],
     ['layer-landslide', 'landslide', '⛰️ Landslide Risk']

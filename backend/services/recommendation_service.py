@@ -7,10 +7,22 @@
 # model's *predicted* LST — instead of a single hardcoded "°C per %" multiplier
 # applied uniformly city-wide. Falls back to the old linear formula if the model
 # hasn't been trained yet, so the endpoint never breaks.
+#
+# get_zone_recommendations() now returns THREE things per zone, not one:
+#   - actions:            planner/municipal-facing infrastructure interventions,
+#                          now hazard-aware (heat / landslide / rain), not just heat
+#   - breakdown:           Hazard/Exposure/Vulnerability decomposition of WHY this
+#                          zone is risky, instead of one opaque HVI number
+#                          (risk_explainer_service.py)
+#   - public_safety_tips:  citizen-facing "what to do right now", separate from
+#                          the planner actions above (risk_explainer_service.py)
+
+from __future__ import annotations
 
 from backend.config import CITY_REGISTRY, SIM_SCENARIOS
 from backend.services.heat_service import _CITY_HEAT, _base_lst_for_city, _generate_grid
 from backend.services.ml_service import is_ready, predict_lst
+from backend.services.risk_explainer_service import compute_hev_breakdown, get_public_safety_tips, detect_active_hazards
 from backend.utils.helpers import compute_hvi, risk_level_from_hvi
 
 STRATEGIES = [
@@ -145,18 +157,53 @@ def simulate(city: str, scenario: str, coverage_pct: float) -> dict:
     return _simulate_with_formula(city, cfg, sc, scenario, coverage_pct)
 
 
+def _planner_actions_for_zone(z: dict) -> list:
+    """
+    Planner/municipal-facing infrastructure actions — now hazard-aware:
+    checks heat, landslide AND rain conditions instead of only heat, so a
+    zone with e.g. active landslide risk gets landslide-specific actions
+    rather than always heat-only advice regardless of what's actually
+    happening there.
+    """
+    active = detect_active_hazards(z)
+    actions = []
+
+    if "heat" in active:
+        if z["ndvi"] < 0.25:   actions.append("Plant trees / green cover")
+        if z["lst"] > 42:      actions.append("Deploy cool roofs")
+        if z["population_density"] > 20000: actions.append("Set up cooling shelter")
+        if z["uhi_intensity"] > 3: actions.append("Cool pavements & shade structures")
+
+    if "landslide" in active:
+        if z.get("slope_deg", 0) > 25:
+            actions.append("High-slope zone — restrict new construction")
+        if z.get("rainfall_48h_mm", 0) > 50:
+            actions.append("Evacuation advisory — monitor next 24h")
+        actions.append("Increase drainage / retaining-wall inspection frequency")
+
+    if "rain" in active:
+        actions.append("Clear storm drains — waterlogging risk")
+        actions.append("Activate flood shelters in low-lying areas")
+
+    return actions or ["Monitor & maintain current green cover"]
+
+
 def get_zone_recommendations(city: str, top: int = 5) -> list:
     zones = _generate_grid(city)
     # Sort by HVI descending
     zones.sort(key=lambda z: z["hvi"], reverse=True)
     result = []
     for z in zones[:top]:
-        actions = []
-        if z["ndvi"] < 0.25:   actions.append("Plant trees / green cover")
-        if z["lst"] > 42:      actions.append("Deploy cool roofs")
-        if z["population_density"] > 20000: actions.append("Set up cooling shelter")
-        if z["uhi_intensity"] > 3: actions.append("Cool pavements & shade structures")
-        result.append({"cell_id": z["cell_id"], "hvi": z["hvi"],
-                       "risk_level": z["risk_level"], "lst": z["lst"],
-                       "actions": actions or ["Monitor & maintain current green cover"]})
+        breakdown = compute_hev_breakdown(z)
+        safety = get_public_safety_tips(z)
+        result.append({
+            "cell_id": z["cell_id"],
+            "hvi": z["hvi"],
+            "risk_level": z["risk_level"],
+            "lst": z["lst"],
+            "active_hazards": safety["active_hazards"],
+            "actions": _planner_actions_for_zone(z),
+            "breakdown": breakdown,
+            "public_safety_tips": safety["tips"],
+        })
     return result

@@ -129,34 +129,138 @@ async function renderAlerts(city) {
   logActivity('heat_alert', 'Alerts loaded for '+cityDisplayName(city), city);
 }
 
-// ---- Recommendations — NOW backend-driven, per-zone, condition-based
-// (heat/landslide/rain — see recommendation_service.py) instead of one
-// fixed hardcoded list per city. Every city works, including new ones
-// added only to config.py, with no frontend changes needed. ----
-async function renderRecommendations(city) {
-  const el = document.getElementById('recommendations-list');
-  if (!el) return;
-  el.innerHTML = '<div class="alert-loading">Loading recommendations…</div>';
+// ---- Recommendations — powers BOTH the "AI Insights" panel (rich HEV
+// breakdown cards) and the "Priority Zones" list (compact dot list), from
+// ONE backend call so there's no duplicate fetch. ----
+const HAZARD_ICON = { heat: '🔥', rain: '🌧️', landslide: '⛰️' };
+const HAZARD_COLOR = { heat: '#f97316', rain: '#38bdf8', landslide: '#eab308' };
 
-  const data = (typeof fetchRecommendations === 'function') ? await fetchRecommendations(city, 4) : null;
+async function renderRecommendations(city) {
+  const listEl = document.getElementById('recommendations-list');
+  const insightsEl = document.getElementById('ai-insights-panel');
+  if (listEl) listEl.innerHTML = '<div class="alert-loading">Loading…</div>';
+  if (insightsEl) insightsEl.innerHTML = '<div class="alert-loading">Loading insights…</div>';
+
+  const data = (typeof fetchRecommendations === 'function') ? await fetchRecommendations(city, 5) : null;
   const zoneRecs = data && data.recommendations ? data.recommendations : [];
 
   if (!zoneRecs.length) {
-    el.innerHTML = '<div class="alert-loading">No priority recommendations right now.</div>';
+    if (listEl) listEl.innerHTML = '<div class="alert-loading">No priority zones right now.</div>';
+    if (insightsEl) insightsEl.innerHTML = '<div class="alert-loading">No active insights right now.</div>';
     return;
   }
 
-  // Flatten: one line per zone with its top action, numbered like the old list.
-  const lines = zoneRecs.map(z => {
-    const hazardTag = z.active_hazards && z.active_hazards.length
-      ? ` [${z.active_hazards.join(', ')}]` : '';
-    const action = (z.actions && z.actions[0]) || 'Monitor & maintain current green cover';
-    return `Zone ${z.cell_id}${hazardTag}: ${action}`;
-  });
+  // Priority Zones — compact list with a hazard-colored dot
+  if (listEl) {
+    listEl.innerHTML = zoneRecs.map((z, i) => {
+      const hazard = (z.active_hazards && z.active_hazards[0]) || 'heat';
+      const color = HAZARD_COLOR[hazard] || '#94a3b8';
+      const action = (z.actions && z.actions[0]) || 'Monitor & maintain current green cover';
+      return `<div class="rec-item">
+        <span class="zone-dot" style="background:${color}"></span>
+        <div><b>Zone ${z.cell_id}</b> — ${z.risk_level}<br><span style="color:var(--uha-dim)">${action}</span></div>
+      </div>`;
+    }).join('');
+  }
 
-  el.innerHTML = lines.map((r,i) =>
-    `<div class="rec-item"><span class="rec-num">${i+1}</span><span>${r}</span></div>`
-  ).join('');
+  // AI Insights — rich HEV breakdown cards (top 4)
+  if (insightsEl) {
+    insightsEl.innerHTML = zoneRecs.slice(0, 4).map(z => {
+      const b = z.breakdown;
+      if (!b) return '';
+      const icon = HAZARD_ICON[b.hazard.type] || '⚠️';
+      const color = HAZARD_COLOR[b.hazard.type] || '#f97316';
+      return `<div class="insight-item">
+        <div class="insight-icon" style="background:${color}22;color:${color}">${icon}</div>
+        <div class="insight-body">
+          <div class="insight-title">Zone ${z.cell_id} — ${b.hazard.label}</div>
+          <div class="insight-desc">${b.hazard.detail}<br>Primary driver: <b>${b.primary_driver}</b> · ${b.exposure.detail}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ---- Land Use & Surface Analysis + Green Cover / Recommended Trees ----
+// Derived from real per-zone NDVI + urban_index averaged across the FULL
+// city grid (not just top-5 priority zones), fetched via the existing
+// /heat/map GeoJSON. This is an ESTIMATE (no true land-use classification
+// exists in the pipeline) — labeled "est." in the UI for honesty.
+let landUseChart;
+async function renderLandStats(city) {
+  const geojson = (typeof fetchHeatMap === 'function') ? await fetchHeatMap(city) : null;
+  const feats = geojson && geojson.features ? geojson.features : [];
+  if (!feats.length) return;
+
+  const n = feats.length;
+  const avgNdvi = feats.reduce((s, f) => s + (f.properties.ndvi || 0), 0) / n;
+  const avgUrban = feats.reduce((s, f) => s + (f.properties.urban_index || 0), 0) / n;
+  const treeZones = feats.filter(f => (f.properties.ndvi || 0) < 0.25).length;
+
+  setText('dash-green-cover', Math.round(avgNdvi * 100) + '%');
+  setText('dash-tree-zones', treeZones.toLocaleString('en-IN'));
+
+  const builtUp = Math.round(avgUrban * 100);
+  const vegetation = Math.round(avgNdvi * 100);
+  const openLand = Math.max(0, 100 - builtUp - vegetation);
+  const labels = ['Built-up', 'Vegetation', 'Open Land'];
+  const values = [builtUp, vegetation, openLand];
+  const colors = ['#dc2626', '#22c55e', '#eab308'];
+
+  const ctx = document.getElementById('landUseChart')?.getContext('2d');
+  if (ctx) {
+    if (landUseChart) landUseChart.destroy();
+    landUseChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderColor: '#11151f', borderWidth: 2 }] },
+      options: { responsive: false, plugins: { legend: { display: false } }, cutout: '65%' }
+    });
+  }
+  const legendEl = document.getElementById('land-use-legend');
+  if (legendEl) {
+    legendEl.innerHTML = labels.map((l, i) =>
+      `<div class="dl-row"><span class="dl-swatch" style="background:${colors[i]}"></span>${l}<span class="dl-pct">${values[i]}%</span></div>`
+    ).join('');
+  }
+}
+
+// ---- Population Vulnerability ----
+// ASSUMPTION: hits the existing fetchForecast() → /health/forecast endpoint,
+// expecting a `demographics` object shaped like health_service.py's
+// get_vulnerable_populations() (elderly_65_plus, children_under_5,
+// outdoor_workers, low_income_households) — the same function
+// report_service.py already uses for the PDF report. If the route or shape
+// differs, this shows a graceful fallback instead of crashing; send
+// backend/api/health.py to confirm the exact route if it doesn't populate.
+async function renderVulnerability(city) {
+  const el = document.getElementById('vulnerability-panel');
+  if (!el) return;
+  el.innerHTML = '<div class="alert-loading">Loading…</div>';
+
+  const data = (typeof fetchForecast === 'function') ? await fetchForecast(city) : null;
+  const demo = data && (data.demographics || (data.health_summary && data.health_summary.demographics));
+
+  if (!demo) {
+    el.innerHTML = '<div class="alert-loading">Vulnerability breakdown unavailable — check /health/forecast response shape.</div>';
+    return;
+  }
+
+  const total = (demo.elderly_65_plus || 0) + (demo.children_under_5 || 0) +
+                (demo.outdoor_workers || 0) + (demo.low_income_households || 0) || 1;
+  const rows = [
+    { label: 'Children (0–14)', val: demo.children_under_5 || 0, color: '#f97316' },
+    { label: 'Elderly (65+)', val: demo.elderly_65_plus || 0, color: '#dc2626' },
+    { label: 'Outdoor Workers', val: demo.outdoor_workers || 0, color: '#38bdf8' },
+    { label: 'Low-income Households', val: demo.low_income_households || 0, color: '#eab308' },
+  ];
+
+  el.innerHTML = rows.map(r => {
+    const pct = Math.round((r.val / total) * 100);
+    return `<div class="vuln-bar-row">
+      <div class="vuln-label"><span>${r.label}</span><span>${r.val.toLocaleString('en-IN')} (${pct}%)</span></div>
+      <div class="vuln-track"><div class="vuln-fill" style="width:${pct}%;background:${r.color}"></div></div>
+    </div>`;
+  }).join('');
 }
 
 // ---- Charts ----
@@ -164,24 +268,6 @@ async function initCharts(city) {
   const mockD = (typeof CITY_DATA !== 'undefined') ? CITY_DATA[city] : {};
   const base  = mockD.avgLST || 36;
 
-  const rctx = document.getElementById('riskChart')?.getContext('2d');
-  if (rctx) {
-    if (riskChart) riskChart.destroy();
-    const hr = mockD.highRisk || 150, total = mockD.totalZones || 900;
-    const extreme = Math.round(hr*0.25), high = hr-extreme,
-          mod = Math.round(total*0.22), low = total-extreme-high-mod;
-    riskChart = new Chart(rctx, {
-      type:'doughnut',
-      data:{ labels:['Extreme','High','Moderate','Low'],
-        datasets:[{ data:[extreme,high,mod,low],
-          backgroundColor:['#dc2626','#f97316','#eab308','#22c55e'],
-          borderColor:'#1a1a2e', borderWidth:2 }] },
-      options:{ responsive:true, plugins:{
-        legend:{ position:'bottom', labels:{ color:'#e2e8f0', font:{size:11} } },
-        tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.raw} zones` } }
-      }}
-    });
-  }
 
   // Trend chart — NOW backend-driven (real per-city seasonal average from
   // heat_service.get_trend, anchored to the satellite/live-calibrated base).
@@ -316,6 +402,8 @@ async function switchCityDashboard(city) {
   await updateStats(city);
   await renderAlerts(city);
   await renderRecommendations(city);
+  await renderLandStats(city);
+  await renderVulnerability(city);
   await initCharts(city);
   if (typeof switchCity === 'function') switchCity(city);
   showToast('🏙️ Switched to '+cityDisplayName(city));
@@ -343,6 +431,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await updateStats(currentCity);
   await renderAlerts(currentCity);
   await renderRecommendations(currentCity);
+  await renderLandStats(currentCity);
+  await renderVulnerability(currentCity);
   await initCharts(currentCity);
   initClimateBanner();
 });

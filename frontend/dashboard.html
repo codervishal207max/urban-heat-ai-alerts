@@ -6,20 +6,45 @@
   <title>Urban Heat AI — Dashboard</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard-v2.css">
 </head>
 <body>
   <canvas id="bg-canvas"></canvas>
   <div class="bg-grid"></div>
 
-  <nav class="navbar">
-    <div class="nav-brand"><span class="logo">🌡️</span> Urban Heat AI</div>
+  <!-- ============ TOP BAR (login/profile removed) ============ -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🌡️</span>
+      <div class="brand-text">
+        <h1>Urban Heat AI</h1>
+        <span>Cooler Cities · Healthier People · Sustainable Future</span>
+      </div>
+    </div>
     <div class="nav-links">
       <a href="index.html">Home</a>
       <a href="dashboard.html" class="active">Dashboard</a>
       <a href="database.html">Database</a>
     </div>
-    <span class="backend-status offline" id="backend-status">● Checking…</span>
-  </nav>
+    <div class="topbar-right">
+      <div class="city-pill">
+        📍
+        <select id="city-select" class="city-select-inline">
+          <option value="delhi">Delhi NCR</option>
+          <option value="mumbai">Mumbai</option>
+          <option value="bangalore">Bangalore</option>
+          <option value="chennai">Chennai</option>
+          <option value="hyderabad">Hyderabad</option>
+          <option value="kolkata">Kolkata</option>
+          <option value="pune">Pune</option>
+          <option value="ahmedabad">Ahmedabad</option>
+          <option value="jaipur">Jaipur</option>
+          <option value="lucknow">Lucknow</option>
+        </select>
+      </div>
+      <div id="live-badge" class="live-badge">🌐 Checking…</div>
+    </div>
+  </header>
 
   <!-- Climate Alert Banner -->
   <div id="climate-alert-banner" class="climate-banner">
@@ -30,94 +55,152 @@
     </div>
   </div>
 
-  <div class="dashboard-container">
-    <!-- SIDEBAR -->
+  <div class="shell">
+    <!-- ============ SIDEBAR: section nav + working controls ============ -->
     <aside class="sidebar">
+      <a href="#section-map" class="nav-item active"><span class="nav-icon">🗺️</span> Heat Map</a>
+      <a href="#section-insights" class="nav-item"><span class="nav-icon">💡</span> AI Insights</a>
+      <a href="#section-zones" class="nav-item"><span class="nav-icon">📍</span> Priority Zones</a>
+      <a href="#section-trend" class="nav-item"><span class="nav-icon">📈</span> Trends</a>
+      <a href="#section-controls" class="nav-item"><span class="nav-icon">⚙️</span> Simulation</a>
+      <a href="database.html" class="nav-item"><span class="nav-icon">🗂️</span> Data &amp; Layers</a>
+      <a href="javascript:void(0)" id="download-report" class="nav-item"><span class="nav-icon">📄</span> Reports</a>
 
-      <h3>🏙️ City</h3>
-      <div class="city-selector-panel">
-        <select id="city-select" class="city-dropdown">
-          <option value="delhi">🏛️ Delhi NCR</option>
-          <option value="mumbai">🌊 Mumbai</option>
-          <option value="bangalore">🌿 Bangalore</option>
-          <option value="chennai">🌴 Chennai</option>
-          <option value="hyderabad">💎 Hyderabad</option>
-          <option value="kolkata">🎭 Kolkata</option>
-          <option value="pune">🏔️ Pune</option>
-          <option value="ahmedabad">🦁 Ahmedabad</option>
-          <option value="jaipur">🌸 Jaipur</option>
-          <option value="lucknow">🕌 Lucknow</option>
-        </select>
-        <div id="city-alert-badge" class="city-alert-badge hidden"></div>
+      <div class="sidebar-footer-card">
+        <b>🍃 AI for Climate-Resilient Cities</b>
+        Smarter insights. Greener tomorrow.
       </div>
-
-      <h3>Map Layers</h3>
-      <div class="layer-controls">
-        <label class="layer-toggle"><input type="checkbox" id="layer-heat" checked> 🔥 Heat Map (LST)</label>
-        <label class="layer-toggle"><input type="checkbox" id="layer-health"> ⚠️ Health Risk (HVI)</label>
-        <label class="layer-toggle"><input type="checkbox" id="layer-ndvi"> 🌿 Vegetation (NDVI)</label>
-        <label class="layer-toggle"><input type="checkbox" id="layer-hotspots"> 📍 UHI Hotspots</label>
-        <label class="layer-toggle"><input type="checkbox" id="layer-rain"> 🌧️ Rain Map</label>
-        <label class="layer-toggle"><input type="checkbox" id="layer-landslide"> ⛰️ Landslide Risk</label>
-      </div>
-
-      <h3>🚨 Heat Alerts</h3>
-      <div id="heat-alerts-panel" class="heat-alerts-panel">
-        <div class="alert-loading">Loading alerts…</div>
-      </div>
-
-      <h3>Simulation</h3>
-      <div class="simulation-panel">
-        <label>Scenario</label>
-        <select id="sim-scenario">
-          <option value="green_cover">🌳 Green Cover +20%</option>
-          <option value="cool_roofs">🏠 Cool Roofs</option>
-          <option value="cool_pavements">🛣️ Cool Pavements</option>
-          <option value="water_bodies">💧 Water Bodies</option>
-        </select>
-        <label>Coverage: <span id="coverage-value">20%</span></label>
-        <input type="range" id="sim-coverage" min="5" max="50" value="20">
-        <button id="run-simulation" class="sim-btn">▶ Run Simulation</button>
-        <button id="compare-toggle-btn" class="sim-btn compare-btn">🔀 Compare Before / After</button>
-        <button id="download-report" class="sim-btn report-btn">📄 Download Policy Report (PDF)</button>
-      </div>
-
     </aside>
 
-    <!-- MAIN -->
-    <div class="dashboard-main">
-      <div id="live-badge" class="live-badge">🌐 Checking live weather…</div>
+    <!-- ============ MAIN ============ -->
+    <main class="main">
+
+      <!-- Stat strip (real backend data) -->
       <div class="stats-row">
-        <div class="stat-box"><span class="stat-icon">🌡️</span><div><div class="stat-value" id="dash-avg-temp">—</div><div class="stat-label">Avg LST (°C)</div></div></div>
-        <div class="stat-box"><span class="stat-icon">🔥</span><div><div class="stat-value" id="dash-max-temp">—</div><div class="stat-label">Max LST (°C)</div></div></div>
-        <div class="stat-box"><span class="stat-icon">⚠️</span><div><div class="stat-value" id="dash-high-risk">—</div><div class="stat-label">High Risk Zones</div></div></div>
-        <div class="stat-box"><span class="stat-icon">👥</span><div><div class="stat-value" id="dash-pop-risk">—</div><div class="stat-label">Pop. at High Risk</div></div></div>
+        <div class="stat-card">
+          <div class="stat-top"><div class="stat-icon" style="background:rgba(56,189,248,0.15);color:#38bdf8;">🌡️</div><div class="stat-label">Avg LST</div></div>
+          <div class="stat-value" id="dash-avg-temp">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top"><div class="stat-icon" style="background:rgba(220,38,38,0.15);color:#f87171;">🔥</div><div class="stat-label">Max Land Surface Temp.</div></div>
+          <div class="stat-value" id="dash-max-temp">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top"><div class="stat-icon" style="background:rgba(249,115,22,0.15);color:#f97316;">⚠️</div><div class="stat-label">Heat Island Zones</div></div>
+          <div class="stat-value" id="dash-high-risk">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top"><div class="stat-icon" style="background:rgba(236,72,153,0.15);color:#f472b6;">👥</div><div class="stat-label">Population at Risk</div></div>
+          <div class="stat-value" id="dash-pop-risk">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top"><div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#22c55e;">🌳</div><div class="stat-label">Recommended Trees</div></div>
+          <div class="stat-value" id="dash-tree-zones">—</div>
+          <div class="stat-sub">zones needing green cover</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top"><div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#22c55e;">🍃</div><div class="stat-label">Green Cover (est.)</div></div>
+          <div class="stat-value" id="dash-green-cover">—</div>
+          <div class="stat-sub">avg. NDVI-based estimate</div>
+        </div>
       </div>
 
-      <div class="map-section">
-        <div id="map"></div>
+      <!-- Map (UNCHANGED — real Leaflet, real layers) + AI Insights -->
+      <div class="map-insights-row" id="section-map">
+        <div class="card map-card">
+          <div class="card-header">
+            <div class="card-title">🌡️ Urban Heat Island Map</div>
+            <div class="layer-controls">
+              <label class="layer-toggle"><input type="checkbox" id="layer-heat" checked> 🌡️ Land Surface Temp</label>
+              <label class="layer-toggle"><input type="checkbox" id="layer-health"> ⚠️ Heat Risk</label>
+              <label class="layer-toggle"><input type="checkbox" id="layer-ndvi"> 🌿 NDVI</label>
+              <label class="layer-toggle"><input type="checkbox" id="layer-landuse"> 🗺️ Land Use</label>
+              <label class="layer-toggle"><input type="checkbox" id="layer-hotspots"> 📍 Hotspots</label>
+              <label class="layer-toggle"><input type="checkbox" id="layer-rain"> 🌧️ Rain</label>
+              <label class="layer-toggle"><input type="checkbox" id="layer-landslide"> ⛰️ Landslide</label>
+            </div>
+          </div>
+          <div class="map-section">
+            <div id="map"></div>
+            <div id="compare-clip" class="compare-clip"><div id="map-after"></div></div>
+            <div id="compare-overlay" class="compare-overlay">
+              <div class="compare-label compare-label-before">🌡️ CURRENT</div>
+              <div class="compare-label compare-label-after">🌳 SIMULATED</div>
+              <div id="compare-readout" class="compare-readout"></div>
+              <div id="compare-divider" class="compare-divider"><span class="compare-handle">⇔</span></div>
+            </div>
+          </div>
+        </div>
 
-        <!-- Before/After compare slider (compare.js): a second, read-only
-             Leaflet map kept in sync with the main one, revealed via a
-             clipped wrapper + draggable divider. -->
-        <div id="compare-clip" class="compare-clip"><div id="map-after"></div></div>
-        <div id="compare-overlay" class="compare-overlay">
-          <div class="compare-label compare-label-before">🌡️ CURRENT</div>
-          <div class="compare-label compare-label-after">🌳 SIMULATED</div>
-          <div id="compare-readout" class="compare-readout"></div>
-          <div id="compare-divider" class="compare-divider">
-            <span class="compare-handle">⇔</span>
+        <div class="right-col" id="section-insights">
+          <div class="card insights-card">
+            <div class="card-header"><div class="card-title">💡 AI Insights &amp; Recommendations</div></div>
+            <div id="ai-insights-panel" class="insights-list">
+              <div class="alert-loading">Loading insights…</div>
+            </div>
+          </div>
+
+          <div class="card alerts-card" id="section-controls">
+            <div class="card-header"><div class="card-title">🚨 Heat Alerts</div></div>
+            <div id="heat-alerts-panel" class="heat-alerts-panel">
+              <div class="alert-loading">Loading alerts…</div>
+            </div>
+          </div>
+
+          <div class="card sim-card">
+            <div class="card-header"><div class="card-title">🧪 Simulation</div></div>
+            <div class="simulation-panel">
+              <label>Scenario</label>
+              <select id="sim-scenario">
+                <option value="green_cover">🌳 Green Cover +20%</option>
+                <option value="cool_roofs">🏠 Cool Roofs</option>
+                <option value="cool_pavements">🛣️ Cool Pavements</option>
+                <option value="water_bodies">💧 Water Bodies</option>
+              </select>
+              <label>Coverage: <span id="coverage-value">20%</span></label>
+              <input type="range" id="sim-coverage" min="5" max="50" value="20">
+              <button id="run-simulation" class="sim-btn">▶ Run Simulation</button>
+              <button id="compare-toggle-btn" class="sim-btn compare-btn">🔀 Compare Before / After</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="charts-row">
-        <div class="chart-container"><h4>Risk Distribution</h4><canvas id="riskChart"></canvas></div>
-        <div class="chart-container"><h4>Seasonal LST Trend</h4><canvas id="trendChart"></canvas></div>
-        <div class="chart-container"><h4>Top Recommendations</h4><div class="recommendations-list" id="recommendations-list"></div></div>
+      <!-- Trend + Land Use + Priority Zones -->
+      <div class="charts-row" id="section-trend">
+        <div class="chart-container">
+          <h4>📈 Temperature Trend</h4>
+          <canvas id="trendChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <h4>🗺️ Land Use &amp; Surface Analysis <span class="approx-tag">est.</span></h4>
+          <div class="donut-wrap">
+            <canvas id="landUseChart" width="90" height="90"></canvas>
+            <div id="land-use-legend" class="donut-legend"></div>
+          </div>
+        </div>
+        <div class="chart-container" id="section-zones">
+          <h4>📍 Priority Zones</h4>
+          <div class="recommendations-list" id="recommendations-list"></div>
+        </div>
       </div>
-    </div>
+
+      <!-- Population Vulnerability (full width) -->
+      <div class="card vuln-card">
+        <div class="card-header"><div class="card-title">👥 Population Vulnerability</div></div>
+        <div id="vulnerability-panel" class="vuln-panel">
+          <div class="alert-loading">Loading…</div>
+        </div>
+      </div>
+    </main>
   </div>
+
+  <footer class="footer">
+    <div>Urban Heat AI — Geospatial Intelligence for a Cooler, Healthier and More Sustainable City</div>
+    <div class="footer-sources">
+      <span>🛰️ Satellite</span><span>🌦️ Weather</span><span>🗺️ Land Use</span><span>🌿 NDVI</span>
+    </div>
+  </footer>
 
   <!-- Simulation Modal -->
   <div id="sim-modal" class="modal-overlay">
