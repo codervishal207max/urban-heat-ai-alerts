@@ -38,3 +38,6 @@ echo ""
 
 # Launch the FastAPI app. The backend also serves frontend static files.
 python -m backend.main
+
+#  for instant deploying run this command in terminal
+#  .run/.bat 
