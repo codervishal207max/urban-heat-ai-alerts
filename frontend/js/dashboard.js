@@ -5,6 +5,18 @@
 
 let currentCity = 'delhi';
 let riskChart, trendChart;
+// Nothing loads until the user searches and picks a city — see
+// initCitySearch() and the guarded DOMContentLoaded block below.
+let citySelected = false;
+window.citySelected = false;
+
+function requireCitySelected() {
+  if (!citySelected) {
+    showToast('⚠️ Please select your city');
+    return false;
+  }
+  return true;
+}
 
 const CLIMATE_ALERTS = [
   '🔴 CRITICAL: India me heatwave frequency 3× increase projected by 2050 — Urban planning abhi badalni chahiye!',
@@ -333,6 +345,7 @@ function initClimateBanner() {
 
 // ---- Simulation (backend-aware) ----
 async function runSimulation() {
+  if (!requireCitySelected()) return;
   const scenario = document.getElementById('sim-scenario').value;
   const coverage = parseInt(document.getElementById('sim-coverage').value);
   const meta     = SIM_META[scenario];
@@ -387,6 +400,7 @@ async function runSimulation() {
 
 // ---- Policy Report (PDF download) ----
 function downloadReport() {
+  if (!requireCitySelected()) return;
   const scenario = document.getElementById('sim-scenario')?.value || 'green_cover';
   const coverage = document.getElementById('sim-coverage')?.value || 20;
   const url = API_BASE + `/report/generate?city=${currentCity}&scenario=${scenario}&coverage=${coverage}`;
@@ -476,7 +490,7 @@ function initCitySearch() {
           }
           if (sel) sel.value = reg.city_key;
 
-          switchCityDashboard(reg.city_key);
+          selectCity(reg.city_key);
         });
       });
     }, 400); // debounce — avoid a request per keystroke
@@ -488,10 +502,16 @@ function initCitySearch() {
 }
 
 // ---- Init ----
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   const urlCity = new URLSearchParams(window.location.search).get('city');
-  if (urlCity) currentCity = urlCity;
-  window.currentCity = currentCity;
+  // A URL-provided city still requires going through the normal search+select
+  // flow's data loading path (selectCity below) rather than silently
+  // auto-loading, so the "nothing shows until a city is chosen" rule holds
+  // even for direct links — this just pre-fills the search box for convenience.
+  if (urlCity) {
+    const input = document.getElementById('city-search-input');
+    if (input) input.value = urlCity;
+  }
 
   document.getElementById('sim-coverage')?.addEventListener('input', e => {
     const v = document.getElementById('coverage-value'); if (v) v.textContent = e.target.value+'%';
@@ -501,15 +521,43 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('sim-close')?.addEventListener('click', () => document.getElementById('sim-modal').classList.remove('open'));
   document.getElementById('sim-modal')?.addEventListener('click', e => { if (e.target.id==='sim-modal') e.target.classList.remove('open'); });
   document.getElementById('climate-modal-close')?.addEventListener('click', () => document.getElementById('climate-modal').classList.remove('open'));
-  initCitySearch();
 
-  await Promise.all([
-    updateStats(currentCity),
-    renderAlerts(currentCity),
-    renderRecommendations(currentCity),
-    renderLandStats(currentCity),
-    renderVulnerability(currentCity),
-    initCharts(currentCity),
-  ]);
+  // Guard "Compare Before/After" — attached BEFORE compare.js's own listener
+  // (this script loads first), so stopImmediatePropagation here blocks
+  // compare.js's handler from running at all when no city is selected yet.
+  document.getElementById('compare-toggle-btn')?.addEventListener('click', (e) => {
+    if (!requireCitySelected()) { e.stopImmediatePropagation(); e.preventDefault(); }
+  });
+
+  initCitySearch();
+  showEmptyState();
   initClimateBanner();
 });
+
+// Nothing is loaded on page load — every panel shows a "select your city"
+// placeholder until the user searches and picks one (initCitySearch()).
+function showEmptyState() {
+  const msg = '📍 Please select your city to see data';
+  const heatAlerts = document.getElementById('heat-alerts-panel');
+  const insights = document.getElementById('ai-insights-panel');
+  const recList = document.getElementById('recommendations-list');
+  const vuln = document.getElementById('vulnerability-panel');
+  const landLegend = document.getElementById('land-use-legend');
+  if (heatAlerts) heatAlerts.innerHTML = `<div class="alert-loading">${msg}</div>`;
+  if (insights) insights.innerHTML = `<div class="alert-loading">${msg}</div>`;
+  if (recList) recList.innerHTML = `<div class="alert-loading">${msg}</div>`;
+  if (vuln) vuln.innerHTML = `<div class="alert-loading">${msg}</div>`;
+  if (landLegend) landLegend.innerHTML = `<div class="alert-loading">${msg}</div>`;
+  const liveBadge = document.getElementById('live-badge');
+  if (liveBadge) { liveBadge.textContent = msg; liveBadge.className = 'live-badge offline'; }
+}
+
+// Called once, right after a city is successfully searched + registered —
+// this is the ONLY path that actually loads real data anywhere in the app.
+async function selectCity(cityKey) {
+  citySelected = true;
+  window.citySelected = true;
+  currentCity = cityKey;
+  window.currentCity = cityKey;
+  await switchCityDashboard(cityKey);
+}

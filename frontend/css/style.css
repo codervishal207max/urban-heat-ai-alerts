@@ -34,7 +34,7 @@ body {
 }
 
 /* ---- Background ---- */
-#bg-canvas { position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.35; }
+#bg-canvas { position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.5; }
 .bg-grid {
   position:fixed; inset:0; z-index:0; pointer-events:none;
   background-image: linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),

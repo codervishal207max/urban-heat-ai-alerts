@@ -12,7 +12,7 @@ const API_BASE = (function () {
   return 'http://localhost:8000';
 })();
 
-const BACKEND_TIMEOUT = 4500; // ms — if no response, fall back to mock
+const BACKEND_TIMEOUT = 18000; // ms — cold-cache city loads real satellite+rainfall+elevation data, can take 10-15s the FIRST time; cached repeat loads are fast (few hundred ms)
 
 // ---- Fetch with timeout + fallback ----
 async function apiFetch(path) {

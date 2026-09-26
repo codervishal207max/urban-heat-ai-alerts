@@ -14,9 +14,9 @@
 
   function Particle() {
     this.x = Math.random()*W; this.y = Math.random()*H;
-    this.r = Math.random()*1.5+0.4;
-    this.dx = (Math.random()-0.5)*0.25; this.dy = (Math.random()-0.5)*0.25;
-    this.alpha = Math.random()*0.4+0.1;
+    this.r = Math.random()*3+1;
+    this.dx = (Math.random()-0.5)*0.26; this.dy = (Math.random()-0.5)*0.26;
+    this.alpha = Math.random()*0.5+0.2;
   }
   for (let i=0;i<90;i++) particles.push(new Particle());
 
@@ -24,7 +24,7 @@
     ctx.clearRect(0,0,W,H);
     particles.forEach(p=>{
       ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-      ctx.fillStyle='rgba(251,146,60,'+p.alpha+')'; ctx.fill();
+      ctx.fillStyle='rgba(249,115,22,'+p.alpha+')'; ctx.fill();
       p.x+=p.dx; p.y+=p.dy;
       if(p.x<0||p.x>W) p.dx*=-1; if(p.y<0||p.y>H) p.dy*=-1;
     });

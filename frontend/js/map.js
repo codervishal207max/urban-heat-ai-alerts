@@ -134,16 +134,15 @@ function popupHTML(p) {
 }
 
 async function initMap() {
-  const urlCity = new URLSearchParams(window.location.search).get('city');
-  if (urlCity && CITY_MAP_CFG[urlCity]) currentMapCity = urlCity;
-  window.currentCity = currentMapCity;
-
-  const cfg = CITY_MAP_CFG[currentMapCity];
+  // No auto-load: map starts on a neutral India-wide view with NO data
+  // layers until the user searches and picks a city (dashboard.js's
+  // selectCity() is what calls switchCity() below, for real).
+  const defaultView = { center: [22.5, 79.0], zoom: 5 };
 
   map = L.map('map', {
     zoomControl:false, attributionControl:true,
     zoomSnap:0.25, zoomDelta:0.5, wheelDebounceTime:50, wheelPxPerZoomLevel:80
-  }).setView(cfg.center, cfg.zoom);
+  }).setView(defaultView.center, defaultView.zoom);
 
   L.control.zoom({ position:'topright' }).addTo(map);
 
@@ -161,7 +160,6 @@ async function initMap() {
   }).addTo(map);
 
   addLegend();
-  await loadLayers(currentMapCity);
   bindToggles();
 }
 
@@ -290,6 +288,12 @@ function bindToggles() {
     const cb = document.getElementById(id);
     if (!cb) return;
     cb.addEventListener('change', () => {
+      // No city selected yet — nothing to toggle, revert the checkbox and
+      // tell the user what to do instead of silently doing nothing.
+      if (typeof requireCitySelected === 'function' && !requireCitySelected()) {
+        cb.checked = !cb.checked;
+        return;
+      }
       if (!mapLayers[key]) return;
       cb.checked ? mapLayers[key].addTo(map) : map.removeLayer(mapLayers[key]);
       showToast((cb.checked?'✅ ':'➖ ')+label+(cb.checked?' ON':' OFF'));
