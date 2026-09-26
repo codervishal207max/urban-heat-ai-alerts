@@ -28,6 +28,15 @@ const RISK_COLORS = {
 function heatColor(t) {
   return t>45?'#7f1d1d':t>42?'#dc2626':t>39?'#f97316':t>36?'#eab308':t>33?'#22c55e':'#3b82f6';
 }
+// Centroid of a GeoJSON Polygon's outer ring — used to turn each zone's
+// rectangle into a single point for the smooth heat-blend layer.
+function centroidOf(geometry) {
+  const ring = geometry.coordinates[0];
+  let sumLon = 0, sumLat = 0;
+  const n = ring.length - 1; // last point repeats the first, exclude it
+  for (let i = 0; i < n; i++) { sumLon += ring[i][0]; sumLat += ring[i][1]; }
+  return [sumLon / n, sumLat / n]; // [lon, lat]
+}
 function ndviColor(v) {
   return v>0.6?'#14532d':v>0.45?'#16a34a':v>0.3?'#65a30d':v>0.15?'#eab308':'#dc2626';
 }
@@ -186,10 +195,30 @@ async function loadLayers(cityKey) {
 
   const feats = geojson.features;
 
-  mapLayers.heat = L.geoJSON({ type:'FeatureCollection', features: feats }, {
-    style: f => ({ fillColor:heatColor(f.properties.lst), weight:0.3, color:'#333', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
-  }).addTo(map);
+  // Land Surface Temp — smooth blended heatmap (Leaflet.heat) if the plugin
+  // loaded; falls back to the original grid rendering otherwise. Wrapped in
+  // try/catch deliberately: an unguarded failure here used to throw and
+  // abort the REST of this function (every other layer + the
+  // window.currentHeatFeatures line below it), which is why Land Use and
+  // other panels went blank too whenever this one thing failed.
+  try {
+    if (typeof L.heatLayer !== 'function') throw new Error('leaflet.heat not loaded');
+    const heatPoints = feats.map(f => {
+      const [lon, lat] = centroidOf(f.geometry);
+      const intensity = Math.max(0, Math.min(1, (f.properties.lst - 25) / 23)); // 25°C→0, 48°C→1
+      return [lat, lon, intensity];
+    });
+    mapLayers.heat = L.heatLayer(heatPoints, {
+      radius: 22, blur: 28, maxZoom: 14, max: 1.0,
+      gradient: { 0.0:'#3b82f6', 0.3:'#22c55e', 0.5:'#eab308', 0.7:'#f97316', 1.0:'#dc2626' }
+    }).addTo(map);
+  } catch (e) {
+    console.warn('Heat blend layer failed, falling back to grid:', e);
+    mapLayers.heat = L.geoJSON({ type:'FeatureCollection', features: feats }, {
+      style: f => ({ fillColor:heatColor(f.properties.lst), weight:0.3, color:'#333', fillOpacity:0.68 }),
+      onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+    }).addTo(map);
+  }
 
   mapLayers.health = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:riskColor(f.properties.risk_level), weight:0.3, color:'#333', fillOpacity:0.68 }),

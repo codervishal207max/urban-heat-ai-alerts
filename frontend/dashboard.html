@@ -27,20 +27,9 @@
       <a href="database.html">Database</a>
     </div>
     <div class="topbar-right">
-      <div class="city-pill">
-        📍
-        <select id="city-select" class="city-select-inline">
-          <option value="delhi">Delhi NCR</option>
-          <option value="mumbai">Mumbai</option>
-          <option value="bangalore">Bangalore</option>
-          <option value="chennai">Chennai</option>
-          <option value="hyderabad">Hyderabad</option>
-          <option value="kolkata">Kolkata</option>
-          <option value="pune">Pune</option>
-          <option value="ahmedabad">Ahmedabad</option>
-          <option value="jaipur">Jaipur</option>
-          <option value="lucknow">Lucknow</option>
-        </select>
+      <div class="city-search-wrap">
+        <input type="text" id="city-search-input" class="city-search-input" placeholder="🔍 Search any city (e.g. Delhi, Nagercoil…)" autocomplete="off">
+        <div id="city-search-results" class="city-search-results hidden"></div>
       </div>
       <div id="live-badge" class="live-badge">🌐 Checking…</div>
     </div>
@@ -210,7 +199,7 @@
     </div>
   </div>
 
-    <!-- Chatbot -->
+  <!-- Chatbot -->
   <button class="chatbot-fab" id="chatbot-fab" title="Ask HeatBot">
     <span class="chatbot-fab-icon">💬</span>
     <span class="chatbot-fab-label">HeatBot</span>
@@ -219,36 +208,33 @@
   <div class="chatbot-panel" id="chatbot-panel">
     <div class="chatbot-header">
       <div class="chatbot-header-info">
-        <span class="chatbot-avatar-ring"><span class="chatbot-avatar">🌡️</span></span>
-        <div>
-          <strong>HeatBot</strong>
-          <span class="chatbot-status">● Online · LLM + 🎨 Image + 📖 Wiki</span>
-        </div>
+        <span class="chatbot-avatar">🌡️</span>
+        <div><strong>HeatBot</strong><span class="chatbot-status"> ● Online</span></div>
       </div>
       <button class="chatbot-close" id="chatbot-close">&times;</button>
     </div>
     <div class="chatbot-messages" id="chatbot-messages">
       <div class="chat-msg bot">
         <span class="chat-avatar">🌡️</span>
-        <div class="chat-bubble">Namaste! 👋 I'm <b>HeatBot</b>.<br>Ask me about heat alerts, city data, health risks, cooling solutions, or climate change.<br><br>✨ New: <b>🎨 "generate image of..."</b> for AI images, and <b>📖 "wikipedia..."</b> for live facts.<br><br>Type <b>help</b> to see all topics!</div>
+        <div class="chat-bubble">Namaste! 👋 I'm <b>HeatBot</b>.<br>Ask me about heat alerts, city data, health risks, cooling solutions, climate change, or the backend API.<br>Type <b>help</b> to see all topics!</div>
       </div>
     </div>
     <div class="chatbot-suggestions">
       <button class="suggestion-chip">What is Urban Heat Island?</button>
       <button class="suggestion-chip">Show heat alerts</button>
       <button class="suggestion-chip">Best cooling solutions?</button>
-      <button class="suggestion-chip chip-image" data-msg="generate image of a green cool city with parks">🎨 Generate an image</button>
-      <button class="suggestion-chip chip-wiki" data-msg="wikipedia heat wave">📖 Ask Wikipedia</button>
+      <button class="suggestion-chip">How does the backend work?</button>
     </div>
     <div class="chatbot-input-row">
-      <input type="text" class="chatbot-input" id="chatbot-input" placeholder="Ask, or say 'generate image of…'">
-      <button class="chatbot-send" id="chatbot-send" title="Send">↑</button>
+      <input type="text" class="chatbot-input" id="chatbot-input" placeholder="Ask about heat, health, climate…">
+      <button class="chatbot-send" id="chatbot-send">↑</button>
     </div>
   </div>
 
   <div id="toast-container"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="js/api.js"></script>
   <script src="js/effects.js"></script>

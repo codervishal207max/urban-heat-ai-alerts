@@ -188,8 +188,14 @@ async function renderRecommendations(city) {
 // exists in the pipeline) — labeled "est." in the UI for honesty.
 let landUseChart;
 async function renderLandStats(city) {
-  const geojson = (typeof fetchHeatMap === 'function') ? await fetchHeatMap(city) : null;
-  const feats = geojson && geojson.features ? geojson.features : [];
+  // Reuse the grid map.js already fetched for this city (window.currentHeatFeatures)
+  // instead of calling /heat/map a second time — this was the main duplicate
+  // network call slowing the dashboard down on every city switch.
+  let feats = window.currentHeatFeatures;
+  if (!feats || !feats.length) {
+    const geojson = (typeof fetchHeatMap === 'function') ? await fetchHeatMap(city) : null;
+    feats = geojson && geojson.features ? geojson.features : [];
+  }
   if (!feats.length) return;
 
   const n = feats.length;
@@ -399,15 +405,86 @@ function downloadReport() {
 async function switchCityDashboard(city) {
   currentCity = city;
   window.currentCity = city;
-  await updateStats(city);
-  await renderAlerts(city);
-  await renderRecommendations(city);
-  await renderLandStats(city);
-  await renderVulnerability(city);
-  await initCharts(city);
+
+  // switchCity (map.js) runs FIRST and alone — it populates
+  // window.currentHeatFeatures, which renderLandStats() below reuses instead
+  // of re-fetching. Everything else here is independent of each other, so
+  // they run in parallel instead of one-by-one — this is the main fix for
+  // "dashboard data load hone me time leta hai".
   if (typeof switchCity === 'function') switchCity(city);
+
+  await Promise.all([
+    updateStats(city),
+    renderAlerts(city),
+    renderRecommendations(city),
+    renderLandStats(city),
+    renderVulnerability(city),
+    initCharts(city),
+  ]);
+
   showToast('🏙️ Switched to '+cityDisplayName(city));
   logActivity('city_change','Switched to '+cityDisplayName(city), city);
+}
+
+// ---- City search (any city, not just the curated dropdown) ----
+let _citySearchTimer = null;
+
+function initCitySearch() {
+  const input = document.getElementById('city-search-input');
+  const results = document.getElementById('city-search-results');
+  if (!input || !results) return;
+
+  input.addEventListener('input', () => {
+    clearTimeout(_citySearchTimer);
+    const q = input.value.trim();
+    if (q.length < 2) { results.classList.add('hidden'); return; }
+    _citySearchTimer = setTimeout(async () => {
+      const data = (typeof searchCities === 'function') ? await searchCities(q) : null;
+      const matches = data && data.results ? data.results : [];
+      if (!matches.length) {
+        results.innerHTML = '<div class="city-search-empty">No matches found.</div>';
+        results.classList.remove('hidden');
+        return;
+      }
+      results.innerHTML = matches.map((m, i) =>
+        `<div class="city-search-item" data-idx="${i}"><b>${m.name}</b><small>${m.display_name}</small></div>`
+      ).join('');
+      results.classList.remove('hidden');
+
+      results.querySelectorAll('.city-search-item').forEach(el => {
+        el.addEventListener('click', async () => {
+          const m = matches[parseInt(el.dataset.idx)];
+          results.classList.add('hidden');
+          input.value = m.name;
+          showToast('📍 Adding ' + m.name + '…');
+
+          const reg = (typeof registerCity === 'function') ? await registerCity(m.name, m.lat, m.lon) : null;
+          if (!reg || !reg.city_key) { showToast('⚠️ Could not add this city'); return; }
+
+          // Register into map.js's CITY_MAP_CFG at runtime so the map can
+          // center on it — real backend data (heat, recommendations, etc.)
+          // already works for it via city_key regardless of this.
+          if (typeof CITY_MAP_CFG !== 'undefined') {
+            CITY_MAP_CFG[reg.city_key] = { name: reg.name, center: [reg.lat, reg.lon], zoom: 11, baseLST: 30, heatFactor: 8 };
+          }
+          // Also add it to the curated dropdown so it's selectable again later.
+          const sel = document.getElementById('city-select');
+          if (sel && !sel.querySelector(`option[value="${reg.city_key}"]`)) {
+            const opt = document.createElement('option');
+            opt.value = reg.city_key; opt.textContent = reg.name;
+            sel.appendChild(opt);
+          }
+          if (sel) sel.value = reg.city_key;
+
+          switchCityDashboard(reg.city_key);
+        });
+      });
+    }, 400); // debounce — avoid a request per keystroke
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!results.contains(e.target) && e.target !== input) results.classList.add('hidden');
+  });
 }
 
 // ---- Init ----
@@ -415,9 +492,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const urlCity = new URLSearchParams(window.location.search).get('city');
   if (urlCity) currentCity = urlCity;
   window.currentCity = currentCity;
-
-  const sel = document.getElementById('city-select');
-  if (sel) { sel.value = currentCity; sel.addEventListener('change', e => switchCityDashboard(e.target.value)); }
 
   document.getElementById('sim-coverage')?.addEventListener('input', e => {
     const v = document.getElementById('coverage-value'); if (v) v.textContent = e.target.value+'%';
@@ -427,12 +501,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('sim-close')?.addEventListener('click', () => document.getElementById('sim-modal').classList.remove('open'));
   document.getElementById('sim-modal')?.addEventListener('click', e => { if (e.target.id==='sim-modal') e.target.classList.remove('open'); });
   document.getElementById('climate-modal-close')?.addEventListener('click', () => document.getElementById('climate-modal').classList.remove('open'));
+  initCitySearch();
 
-  await updateStats(currentCity);
-  await renderAlerts(currentCity);
-  await renderRecommendations(currentCity);
-  await renderLandStats(currentCity);
-  await renderVulnerability(currentCity);
-  await initCharts(currentCity);
+  await Promise.all([
+    updateStats(currentCity),
+    renderAlerts(currentCity),
+    renderRecommendations(currentCity),
+    renderLandStats(currentCity),
+    renderVulnerability(currentCity),
+    initCharts(currentCity),
+  ]);
   initClimateBanner();
 });

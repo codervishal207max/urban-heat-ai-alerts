@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from backend.config import FRONTEND_DIR
-from backend.api import heat, health, recommendations, zones, chatbot, activity, ml, report, alerts
+from backend.api import heat, health, recommendations, zones, chatbot, activity, ml, report, alerts, cities
 from backend.database import init_db
 import uvicorn
 
@@ -41,6 +41,7 @@ app.include_router(activity.router)
 app.include_router(ml.router)
 app.include_router(report.router)
 app.include_router(alerts.router)
+app.include_router(cities.router) 
 
 # Status endpoint
 @app.get("/api/status", tags=["System"])

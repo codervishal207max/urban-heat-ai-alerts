@@ -25,6 +25,7 @@ async function apiFetch(path) {
     return await res.json();
   } catch (e) {
     clearTimeout(timer);
+    console.error('API call failed:', path, '—', e.message);
     return null; // signal fallback needed
   }
 }
@@ -86,6 +87,27 @@ async function fetchSimulation(city, scenario, coverage) {
 // ---- Health forecast ----
 async function fetchForecast(city) {
   return await apiFetch('/health/forecast?city=' + city);
+}
+
+// ---- Search any city (not just the curated dropdown list) ----
+async function searchCities(query) {
+  return await apiFetch('/cities/search?q=' + encodeURIComponent(query));
+}
+
+// Registers a searched city with the backend so every other endpoint can
+// use it by city_key immediately (see backend/api/cities.py).
+async function registerCity(name, lat, lon) {
+  try {
+    const res = await fetch(API_BASE + '/cities/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, lat, lon }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
 }
 
 // ---- Zone recommendations (real, per-zone, condition-based — not hardcoded per city) ----

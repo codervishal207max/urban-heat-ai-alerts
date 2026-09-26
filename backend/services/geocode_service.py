@@ -37,7 +37,6 @@ def search_city(query: str, limit: int = 5) -> list:
                 "format": "json",
                 "limit": limit,
                 "addressdetails": 1,
-                "featureType": "city",
             },
             headers=HEADERS,
             timeout=REQUEST_TIMEOUT_SEC,
