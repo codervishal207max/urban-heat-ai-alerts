@@ -218,36 +218,36 @@ async function loadLayers(cityKey) {
     console.warn('Heat blend layer failed, falling back to grid:', e);
     mapLayers.heat = L.geoJSON({ type:'FeatureCollection', features: feats }, {
       style: f => ({ fillColor:heatColor(f.properties.lst), weight:0.3, color:'#333', fillOpacity:0.68 }),
-      onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+      onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
     }).addTo(map);
   }
 
   mapLayers.health = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:riskColor(f.properties.risk_level), weight:0.3, color:'#333', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
   });
 
   mapLayers.ndvi = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:ndviColor(f.properties.ndvi), weight:0.3, color:'#333', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
   });
 
   const hs = feats.filter(f => (f.properties.uhi_intensity||0) >= 2.0);
   mapLayers.hotspots = L.geoJSON({ type:'FeatureCollection', features: hs }, {
     style: () => ({ fillColor:'#dc2626', weight:1.5, color:'#7f1d1d', fillOpacity:0.85 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
   });
 
   // NEW — rain layer (48h cumulative rainfall per zone)
   mapLayers.rain = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:rainColor(f.properties.rainfall_48h_mm||0), weight:0.3, color:'#1e3a8a', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
   });
 
   // NEW — landslide risk layer
   mapLayers.landslide = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:landslideColor(f.properties.landslide_risk_level||'Low'), weight:0.3, color:'#333', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
   });
 
   // NEW — land use layer (real urban_index/ndvi classification per zone,
@@ -255,7 +255,7 @@ async function loadLayers(cityKey) {
   mapLayers.landuse = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:landUseColor(f.properties), weight:0.3, color:'#333', fillOpacity:0.68 }),
     onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties) +
-      `<div style="margin-top:4px;color:#e2e8f0">🗺️ Land use: <b>${landUseLabel(f.properties)}</b></div>`)
+      `<div style="margin-top:4px;color:#e2e8f0">🗺️ Land use: <b>${landUseLabel(f.properties)}</b></div>`, { className: 'heat-zone-popup' })
   });
 
   const heatCb = document.getElementById('layer-heat');
