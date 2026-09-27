@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+from fastapi import HTTPException
 from backend.config import CITY_REGISTRY, SIM_SCENARIOS
 from backend.services.heat_service import _CITY_HEAT, _base_lst_for_city, _generate_grid
 from backend.services.ml_service import is_ready, predict_lst
@@ -150,7 +151,9 @@ def _simulate_with_formula(city: str, cfg: dict, sc: dict, scenario: str, covera
 
 
 def simulate(city: str, scenario: str, coverage_pct: float) -> dict:
-    cfg = CITY_REGISTRY.get(city, CITY_REGISTRY["delhi"])
+    cfg = CITY_REGISTRY.get(city)
+    if cfg is None:
+        raise HTTPException(status_code=404, detail=f"City '{city}' not found — search and select a city first.")
     sc  = SIM_SCENARIOS.get(scenario, SIM_SCENARIOS["green_cover"])
     if is_ready():
         return _simulate_with_model(city, cfg, sc, scenario, coverage_pct)

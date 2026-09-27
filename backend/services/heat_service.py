@@ -1,11 +1,13 @@
 # Urban Heat AI v2 — Heat Data Service
 from typing import List, Dict, Tuple
-import math, random
+import math, random, time
+from fastapi import HTTPException
 from backend.config import CITY_REGISTRY, GRID_ROWS, GRID_COLS, LAT_STEP, LON_STEP
 from backend.utils.helpers import seeded_noise, compute_hvi, risk_level_from_hvi
 from backend.services.weather_service import fetch_live_weather
 from backend.services.satellite_service import fetch_real_lst
-from backend.services.climate_risk_service import (fetch_grid_rainfall, fetch_grid_elevation, compute_slope_grid, calculate_landslide_risk
+from backend.services.climate_risk_service import (
+    fetch_grid_rainfall, fetch_grid_elevation, compute_slope_grid, calculate_landslide_risk
 )
 
 # Base LST and heat-factor per city
@@ -82,8 +84,34 @@ def get_calibration_info(city: str) -> dict:
     _, meta = _base_lst_for_city(city, heat)
     return {"city": city, **meta}
 
+
 def _generate_grid(city: str) -> List[Dict]:
-    cfg  = CITY_REGISTRY.get(city, CITY_REGISTRY["delhi"])
+    """
+    Public entry point — cached (see _generate_grid_cached below). A single
+    dashboard page load hits /heat/map, /heat/hotspots, /recommendations/zones
+    etc. in quick succession, each of which used to regenerate the entire
+    900-cell grid (plus the rainfall/elevation/satellite API calls inside it)
+    from scratch. Caching per city for a short TTL means only the FIRST call
+    per city does the real work; everything else in that page load (and for
+    a few minutes after) reuses the same result — this is the main fix for
+    "dashboard data load hone me time leta hai".
+    """
+    cached = _grid_cache.get(city)
+    if cached and (time.time() - cached["ts"]) < GRID_CACHE_TTL_SEC:
+        return cached["zones"]
+    zones = _generate_grid_uncached(city)
+    _grid_cache[city] = {"zones": zones, "ts": time.time()}
+    return zones
+
+
+_grid_cache: dict = {}
+GRID_CACHE_TTL_SEC = 180  # 3 min — long enough to cover one dashboard load's several calls
+
+
+def _generate_grid_uncached(city: str) -> List[Dict]:
+    cfg = CITY_REGISTRY.get(city)
+    if cfg is None:
+        raise HTTPException(status_code=404, detail=f"City '{city}' not found — search and select a city first.")
     heat = _CITY_HEAT.get(city, {"base": 32, "hf": 8})
     clat, clon = cfg["lat"], cfg["lon"]
     seed = cfg["seed"]
@@ -100,9 +128,15 @@ def _generate_grid(city: str) -> List[Dict]:
             urban = math.exp(-2.2 * d)
             noise = seeded_noise(i, j, seed)
 
+            # NDVI has a typical value for a given built-up density (urban), plus an
+            # independent component (a park in a dense area, a bare lot in a green
+            # suburb) — decorrelating it from urban_index so the ML model can learn
+            # vegetation's OWN cooling effect instead of just re-learning urban_index.
             ndvi_base = 0.65 - 0.5 * urban
             ndvi_noise = seeded_noise(i + 41, j + 67, seed) * 0.15
             ndvi = min(0.85, max(0.02, ndvi_base + ndvi_noise))
+            # Real UHI science: vegetation cools independent of built-up density
+            # (~1.2°C per 0.1 NDVI, matching the HeatBot's own stated figure).
             ndvi_cooling = (ndvi - ndvi_base) * -12
 
             lst   = base_lst + heat["hf"] * urban + noise * 0.8 + ndvi_cooling
@@ -119,8 +153,9 @@ def _generate_grid(city: str) -> List[Dict]:
                 "urban_index": round(urban, 4),
             })
 
-    # --- NEW: batch-fetch rainfall + elevation for the whole grid, then
-    # derive slope + landslide risk per zone ---
+    # Batch-fetch rainfall + elevation for the whole grid in one call each,
+    # then derive slope + landslide risk per zone. Falls through to safe
+    # defaults on any API failure — heat data above is never affected.
     rainfall_values = fetch_grid_rainfall(city, zones)
     elevation_values = fetch_grid_elevation(city, zones)
     slope_values = compute_slope_grid(elevation_values, GRID_ROWS, GRID_COLS, LAT_STEP)
@@ -165,7 +200,9 @@ def get_trend(city: str) -> dict:
     base = heat["base"]
     offsets = [-6, -4, -2, 0, 3, 6, 7, 5, 1, -2, -4, -5]
     months  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-    cfg = CITY_REGISTRY.get(city, CITY_REGISTRY["delhi"])
+    cfg = CITY_REGISTRY.get(city)
+    if cfg is None:
+        raise HTTPException(status_code=404, detail=f"City '{city}' not found — search and select a city first.")
     rng = random.Random(cfg["seed"])
     return {
         "city": cfg["name"],
