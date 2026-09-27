@@ -80,7 +80,27 @@ def get_calibration_info(city: str) -> dict:
     """Public helper for the API layer to expose live-vs-static data source status."""
     heat = _CITY_HEAT.get(city, {"base": 32, "hf": 8})
     _, meta = _base_lst_for_city(city, heat)
+    live = fetch_live_weather(city)
+    if live:
+        meta["city_temp_c"] = live.get("temp_c")
+        meta["city_daily_max_c"] = live.get("daily_max_c")
     return {"city": city, **meta}
+
+
+def _compute_zone_live_temp(city: str, zone: dict) -> float:
+    """Estimate a live temperature for each local area using the city's real time weather and local urban intensity."""
+    live = fetch_live_weather(city)
+    city_temp = None
+    if live:
+        city_temp = live.get("temp_c") if live.get("temp_c") is not None else live.get("daily_max_c")
+    heat = _CITY_HEAT.get(city, {"base": 32, "hf": 8})
+    base_lst, _ = _base_lst_for_city(city, heat)
+    ambient = city_temp if city_temp is not None else max(22.0, base_lst - 5.0)
+    urban_boost = (zone.get("urban_index", 0) * heat["hf"] * 1.1)
+    local_adjustment = (zone.get("lst", base_lst) - base_lst) * 0.35
+    live_temp = ambient + urban_boost + local_adjustment
+    return round(float(live_temp), 2)
+
 
 def _generate_grid(city: str) -> List[Dict]:
     cfg  = CITY_REGISTRY.get(city, CITY_REGISTRY["delhi"])
@@ -110,6 +130,11 @@ def _generate_grid(city: str) -> List[Dict]:
             uhi   = round(lst - (base_lst + 4), 2)
             hvi   = compute_hvi(lst, ndvi, pop, uhi, base_lst=base_lst, hf=heat["hf"])
             risk  = risk_level_from_hvi(hvi)
+            zone_live_temp = _compute_zone_live_temp(city, {
+                "lst": lst,
+                "urban_index": urban,
+                "base_lst": base_lst,
+            })
             zones.append({
                 "cell_id": i * GRID_COLS + j,
                 "lat": round(lat, 5), "lon": round(lon, 5),
@@ -117,6 +142,7 @@ def _generate_grid(city: str) -> List[Dict]:
                 "uhi_intensity": uhi, "population_density": pop,
                 "hvi": hvi, "risk_level": risk,
                 "urban_index": round(urban, 4),
+                "live_temp_c": zone_live_temp,
             })
 
     # --- NEW: batch-fetch rainfall + elevation for the whole grid, then
