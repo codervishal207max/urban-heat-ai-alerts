@@ -56,22 +56,45 @@ function fmt(n, d=1) { return parseFloat(n).toFixed(d); }
 
 // Resolves a display name for a city regardless of which config it's known
 // to — CITY_DATA (mock) first, then map.js's CITY_MAP_CFG, then the raw key.
+// This is what lets switchCityDashboard() work for a city that only exists
+// in the backend's CITY_REGISTRY and hasn't been hand-added to every
+// frontend mock object.
 function cityDisplayName(city) {
   if (typeof CITY_DATA !== 'undefined' && CITY_DATA[city]) return CITY_DATA[city].name;
   if (typeof CITY_MAP_CFG !== 'undefined' && CITY_MAP_CFG[city]) return CITY_MAP_CFG[city].name;
   return city.charAt(0).toUpperCase() + city.slice(1);
 }
 
-// ---- Stats (backend-aware) ----
+// ---- Stats — computed DIRECTLY from real per-zone data (same features
+// map.js already fetched), NOT from /zones/summary + a hardcoded mock
+// fallback. The old fallback silently showed DELHI'S numbers for any city
+// where that endpoint was slow/unavailable — this removes that risk
+// entirely by never depending on a separate, possibly-stale summary call. ----
 async function updateStats(city) {
-  const data = (typeof fetchCitySummary === 'function') ? await fetchCitySummary(city) : null;
-  const d = data || (typeof CITY_DATA !== 'undefined' ? CITY_DATA[city] : {}) || {};
-  setText('dash-avg-temp',  fmt(d.avgLST || d.avg_lst || 0) + '°C');
-  setText('dash-max-temp',  fmt(d.maxLST || d.max_lst || 0) + '°C');
-  setText('dash-high-risk', d.highRisk   || d.high_risk_zones || '—');
-  setText('dash-pop-risk',  d.popRisk    || (d.population_at_high_risk
-    ? parseInt(d.population_at_high_risk).toLocaleString('en-IN') : '—'));
-  if (data && data.fromBackend === false) showToast('📴 Demo mode — start backend for live data');
+  let feats = window.currentHeatFeatures;
+  if (!feats || !feats.length) {
+    const geojson = (typeof fetchHeatMap === 'function') ? await fetchHeatMap(city) : null;
+    feats = geojson && geojson.features ? geojson.features : [];
+  }
+
+  if (!feats.length) {
+    setText('dash-avg-temp', '—'); setText('dash-max-temp', '—');
+    setText('dash-high-risk', '—'); setText('dash-pop-risk', '—');
+    updateLiveBadge(city);
+    return;
+  }
+
+  const n = feats.length;
+  const lsts = feats.map(f => f.properties.lst || 0);
+  const avgLst = lsts.reduce((s, v) => s + v, 0) / n;
+  const maxLst = Math.max(...lsts);
+  const highRiskZones = feats.filter(f => ['High', 'Very High'].includes(f.properties.risk_level));
+  const popAtRisk = highRiskZones.reduce((s, f) => s + (f.properties.population_density || 0), 0);
+
+  setText('dash-avg-temp', fmt(avgLst) + '°C');
+  setText('dash-max-temp', fmt(maxLst) + '°C');
+  setText('dash-high-risk', highRiskZones.length.toLocaleString('en-IN'));
+  setText('dash-pop-risk', popAtRisk.toLocaleString('en-IN'));
   updateLiveBadge(city);
 }
 
@@ -96,7 +119,10 @@ async function updateLiveBadge(city) {
   }
 }
 
-// ---- Heat Alerts ----
+// ---- Heat Alerts — NOW backend-driven (real hotspots per city, not a
+// hand-written per-city zone list). Falls back to "no alerts" gracefully
+// rather than a hardcoded fake list when the backend is unreachable, since
+// a fabricated zone name for an arbitrary city would be misleading. ----
 async function renderAlerts(city) {
   const panel = document.getElementById('heat-alerts-panel');
   if (!panel) return;
@@ -112,6 +138,7 @@ async function renderAlerts(city) {
     return;
   }
 
+  // Highest UHI intensity first, top 4 — same count the old hardcoded list showed.
   const top = [...hotspots].sort((a, b) => (b.uhi_intensity||0) - (a.uhi_intensity||0)).slice(0, 4);
   const zones = top.map(z => ({
     zone: `Zone ${z.cell_id}`,
@@ -134,7 +161,9 @@ async function renderAlerts(city) {
   logActivity('heat_alert', 'Alerts loaded for '+cityDisplayName(city), city);
 }
 
-// ---- Recommendations ----
+// ---- Recommendations — powers BOTH the "AI Insights" panel (rich HEV
+// breakdown cards) and the "Priority Zones" list (compact dot list), from
+// ONE backend call so there's no duplicate fetch. ----
 const HAZARD_ICON = { heat: '🔥', rain: '🌧️', landslide: '⛰️' };
 const HAZARD_COLOR = { heat: '#f97316', rain: '#38bdf8', landslide: '#eab308' };
 
@@ -153,6 +182,7 @@ async function renderRecommendations(city) {
     return;
   }
 
+  // Priority Zones — compact list with a hazard-colored dot
   if (listEl) {
     listEl.innerHTML = zoneRecs.map((z, i) => {
       const hazard = (z.active_hazards && z.active_hazards[0]) || 'heat';
@@ -165,6 +195,7 @@ async function renderRecommendations(city) {
     }).join('');
   }
 
+  // AI Insights — rich HEV breakdown cards (top 4)
   if (insightsEl) {
     insightsEl.innerHTML = zoneRecs.slice(0, 4).map(z => {
       const b = z.breakdown;
@@ -182,9 +213,16 @@ async function renderRecommendations(city) {
   }
 }
 
-// ---- Land Use & Surface Analysis ----
+// ---- Land Use & Surface Analysis + Green Cover / Recommended Trees ----
+// Derived from real per-zone NDVI + urban_index averaged across the FULL
+// city grid (not just top-5 priority zones), fetched via the existing
+// /heat/map GeoJSON. This is an ESTIMATE (no true land-use classification
+// exists in the pipeline) — labeled "est." in the UI for honesty.
 let landUseChart;
 async function renderLandStats(city) {
+  // Reuse the grid map.js already fetched for this city (window.currentHeatFeatures)
+  // instead of calling /heat/map a second time — this was the main duplicate
+  // network call slowing the dashboard down on every city switch.
   let feats = window.currentHeatFeatures;
   if (!feats || !feats.length) {
     const geojson = (typeof fetchHeatMap === 'function') ? await fetchHeatMap(city) : null;
@@ -225,6 +263,13 @@ async function renderLandStats(city) {
 }
 
 // ---- Population Vulnerability ----
+// ASSUMPTION: hits the existing fetchForecast() → /health/forecast endpoint,
+// expecting a `demographics` object shaped like health_service.py's
+// get_vulnerable_populations() (elderly_65_plus, children_under_5,
+// outdoor_workers, low_income_households) — the same function
+// report_service.py already uses for the PDF report. If the route or shape
+// differs, this shows a graceful fallback instead of crashing; send
+// backend/api/health.py to confirm the exact route if it doesn't populate.
 async function renderVulnerability(city) {
   const el = document.getElementById('vulnerability-panel');
   if (!el) return;
@@ -234,7 +279,7 @@ async function renderVulnerability(city) {
   const demo = data && (data.demographics || (data.health_summary && data.health_summary.demographics));
 
   if (!demo) {
-    el.innerHTML = '<div class="alert-loading">Vulnerability breakdown unavailable</div>';
+    el.innerHTML = '<div class="alert-loading">Vulnerability breakdown unavailable — check /health/forecast response shape.</div>';
     return;
   }
 
@@ -258,9 +303,14 @@ async function renderVulnerability(city) {
 
 // ---- Charts ----
 async function initCharts(city) {
-  const mockD = (typeof CITY_DATA !== 'undefined') ? CITY_DATA[city] : {};
+  const mockD = (typeof CITY_DATA !== 'undefined' && CITY_DATA[city]) ? CITY_DATA[city] : {};
   const base  = mockD.avgLST || 36;
 
+
+  // Trend chart — NOW backend-driven (real per-city seasonal average from
+  // heat_service.get_trend, anchored to the satellite/live-calibrated base).
+  // Falls back to the old random-jitter mock only if the backend is
+  // unreachable, so the demo never breaks offline.
   const tctx = document.getElementById('trendChart')?.getContext('2d');
   if (tctx) {
     if (trendChart) trendChart.destroy();
@@ -313,14 +363,15 @@ function initClimateBanner() {
   logActivity('climate_alert','Climate banner shown', CLIMATE_ALERTS[0].slice(0,60));
 }
 
-// ---- Simulation ----
+// ---- Simulation (backend-aware) ----
 async function runSimulation() {
   if (!requireCitySelected()) return;
   const scenario = document.getElementById('sim-scenario').value;
   const coverage = parseInt(document.getElementById('sim-coverage').value);
   const meta     = SIM_META[scenario];
-  const mockD    = (typeof CITY_DATA !== 'undefined') ? CITY_DATA[currentCity] : {};
+  const mockD    = (typeof CITY_DATA !== 'undefined' && CITY_DATA[currentCity]) ? CITY_DATA[currentCity] : {};
 
+  // Try backend
   let result = (typeof fetchSimulation === 'function')
     ? await fetchSimulation(currentCity, scenario, coverage) : null;
 
@@ -333,6 +384,7 @@ async function runSimulation() {
     benefited = result.health_impact.people_benefited.toLocaleString('en-IN');
     econCrore = result.economic_saving_crore ? '₹'+result.economic_saving_crore+' Cr' : '—';
   } else {
+    // client fallback
     lstDrop   = +(meta.lstFactor * coverage).toFixed(2);
     avgLST    = mockD.avgLST || 37;
     newAvg    = +(avgLST - lstDrop).toFixed(1);
@@ -366,7 +418,7 @@ async function runSimulation() {
   showToast('🧪 Simulation: −'+lstDrop+'°C projected');
 }
 
-// ---- Policy Report ----
+// ---- Policy Report (PDF download) ----
 function downloadReport() {
   if (!requireCitySelected()) return;
   const scenario = document.getElementById('sim-scenario')?.value || 'green_cover';
@@ -377,15 +429,22 @@ function downloadReport() {
   logActivity('report_download', 'Downloaded policy report for ' + cityDisplayName(currentCity), scenario + ' ' + coverage + '%');
 }
 
-
 // ---- City Switcher ----
+// NOTE: previously gated on `if (!CITY_DATA || !CITY_DATA[city]) return;` —
+// that silently no-op'd for any city not hand-added to the CITY_DATA mock
+// object, which would have blocked every newly-added city (config.py) from
+// working in the dashboard. Removed: every panel below already has its own
+// backend-first-then-fallback logic, so there's nothing left that requires
+// CITY_DATA to contain the city.
 async function switchCityDashboard(city) {
   currentCity = city;
   window.currentCity = city;
 
-  // Save selected city to localStorage so it persists across page navigation
-  localStorage.setItem('urbanHeat_selectedCity', city);
-
+  // switchCity (map.js) runs FIRST and alone — it populates
+  // window.currentHeatFeatures, which renderLandStats() below reuses instead
+  // of re-fetching. Everything else here is independent of each other, so
+  // they run in parallel instead of one-by-one — this is the main fix for
+  // "dashboard data load hone me time leta hai".
   if (typeof switchCity === 'function') switchCity(city);
 
   await Promise.all([
@@ -401,7 +460,7 @@ async function switchCityDashboard(city) {
   logActivity('city_change','Switched to '+cityDisplayName(city), city);
 }
 
-// ---- City search ----
+// ---- City search (any city, not just the curated dropdown) ----
 let _citySearchTimer = null;
 
 function initCitySearch() {
@@ -436,21 +495,25 @@ function initCitySearch() {
           const reg = (typeof registerCity === 'function') ? await registerCity(m.name, m.lat, m.lon) : null;
           if (!reg || !reg.city_key) { showToast('⚠️ Could not add this city'); return; }
 
+          // Register into map.js's CITY_MAP_CFG at runtime so the map can
+          // center on it — real backend data (heat, recommendations, etc.)
+          // already works for it via city_key regardless of this.
           if (typeof CITY_MAP_CFG !== 'undefined') {
             CITY_MAP_CFG[reg.city_key] = { name: reg.name, center: [reg.lat, reg.lon], zoom: 11, baseLST: 30, heatFactor: 8 };
           }
-          const sel = document.getElementById('city-select');
-          if (sel && !sel.querySelector(`option[value="${reg.city_key}"]`)) {
-            const opt = document.createElement('option');
-            opt.value = reg.city_key; opt.textContent = reg.name;
-            sel.appendChild(opt);
-          }
-          if (sel) sel.value = reg.city_key;
+
+          // Persist the selection so navigating Home → Dashboard (or a
+          // refresh) doesn't lose it — stays selected until the user
+          // searches a different city, not just for this page view.
+          try {
+            localStorage.setItem('uhai_last_city', JSON.stringify(
+              { key: reg.city_key, name: reg.name, lat: reg.lat, lon: reg.lon }));
+          } catch (e) {}
 
           selectCity(reg.city_key);
         });
       });
-    }, 400);
+    }, 400); // debounce — avoid a request per keystroke
   });
 
   document.addEventListener('click', (e) => {
@@ -461,6 +524,10 @@ function initCitySearch() {
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
   const urlCity = new URLSearchParams(window.location.search).get('city');
+  // A URL-provided city still requires going through the normal search+select
+  // flow's data loading path (selectCity below) rather than silently
+  // auto-loading, so the "nothing shows until a city is chosen" rule holds
+  // even for direct links — this just pre-fills the search box for convenience.
   if (urlCity) {
     const input = document.getElementById('city-search-input');
     if (input) input.value = urlCity;
@@ -475,24 +542,39 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('sim-modal')?.addEventListener('click', e => { if (e.target.id==='sim-modal') e.target.classList.remove('open'); });
   document.getElementById('climate-modal-close')?.addEventListener('click', () => document.getElementById('climate-modal').classList.remove('open'));
 
+  // Guard "Compare Before/After" — attached BEFORE compare.js's own listener
+  // (this script loads first), so stopImmediatePropagation here blocks
+  // compare.js's handler from running at all when no city is selected yet.
   document.getElementById('compare-toggle-btn')?.addEventListener('click', (e) => {
     if (!requireCitySelected()) { e.stopImmediatePropagation(); e.preventDefault(); }
   });
 
   initCitySearch();
-  initClimateBanner();
 
-  // ---- STEP 1 FIX: Restore previously selected city from localStorage ----
-  const savedCity = localStorage.getItem('urbanHeat_selectedCity');
-  if (savedCity) {
+  // Restore the last city the user selected (persists across Home ↔
+  // Dashboard navigation and page refreshes) — only shows the "select
+  // your city" empty state if nothing was ever selected.
+  let restored = null;
+  try {
+    restored = JSON.parse(localStorage.getItem('uhai_last_city') || 'null');
+  } catch (e) {}
+
+  if (restored && restored.key) {
+    if (typeof CITY_MAP_CFG !== 'undefined') {
+      CITY_MAP_CFG[restored.key] = { name: restored.name, center: [restored.lat, restored.lon], zoom: 11, baseLST: 30, heatFactor: 8 };
+    }
     const input = document.getElementById('city-search-input');
-    if (input) input.value = cityDisplayName(savedCity);
-    selectCity(savedCity);
+    if (input) input.value = restored.name;
+    selectCity(restored.key);
   } else {
     showEmptyState();
   }
+
+  initClimateBanner();
 });
 
+// Nothing is loaded on page load — every panel shows a "select your city"
+// placeholder until the user searches and picks one (initCitySearch()).
 function showEmptyState() {
   const msg = '📍 Please select your city to see data';
   const heatAlerts = document.getElementById('heat-alerts-panel');
@@ -509,6 +591,8 @@ function showEmptyState() {
   if (liveBadge) { liveBadge.textContent = msg; liveBadge.className = 'live-badge offline'; }
 }
 
+// Called once, right after a city is successfully searched + registered —
+// this is the ONLY path that actually loads real data anywhere in the app.
 async function selectCity(cityKey) {
   citySelected = true;
   window.citySelected = true;

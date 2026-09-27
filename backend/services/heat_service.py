@@ -1,6 +1,7 @@
 # Urban Heat AI v2 — Heat Data Service
 from typing import List, Dict, Tuple
 import math, random, time
+from concurrent.futures import ThreadPoolExecutor
 from fastapi import HTTPException
 from backend.config import CITY_REGISTRY, GRID_ROWS, GRID_COLS, LAT_STEP, LON_STEP
 from backend.utils.helpers import seeded_noise, compute_hvi, risk_level_from_hvi
@@ -153,11 +154,16 @@ def _generate_grid_uncached(city: str) -> List[Dict]:
                 "urban_index": round(urban, 4),
             })
 
-    # Batch-fetch rainfall + elevation for the whole grid in one call each,
-    # then derive slope + landslide risk per zone. Falls through to safe
-    # defaults on any API failure — heat data above is never affected.
-    rainfall_values = fetch_grid_rainfall(city, zones)
-    elevation_values = fetch_grid_elevation(city, zones)
+    # Batch-fetch rainfall + elevation for the whole grid — run CONCURRENTLY
+    # (they're independent external API calls) instead of one-after-another,
+    # since sequential rainfall(up to 8s) + elevation(up to 8s) was doubling
+    # cold-cache load time unnecessarily. Falls through to safe defaults on
+    # any API failure — heat data above is never affected.
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        rain_future = executor.submit(fetch_grid_rainfall, city, zones)
+        elev_future = executor.submit(fetch_grid_elevation, city, zones)
+        rainfall_values = rain_future.result()
+        elevation_values = elev_future.result()
     slope_values = compute_slope_grid(elevation_values, GRID_ROWS, GRID_COLS, LAT_STEP)
 
     for idx, z in enumerate(zones):
