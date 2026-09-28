@@ -50,7 +50,7 @@ suggest they switch the city selector on the dashboard for live numbers.
 
 
 def _build_context(city: str) -> dict:
-    cfg = CITY_REGISTRY.get(city, CITY_REGISTRY[DEFAULT_CITY])
+    cfg = CITY_REGISTRY.get(city) or CITY_REGISTRY.get(DEFAULT_CITY) or next(iter(CITY_REGISTRY.values())) 
     zones = _generate_grid(city)
     n = len(zones)
     lsts = [z["lst"] for z in zones]

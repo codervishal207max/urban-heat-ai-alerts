@@ -146,7 +146,7 @@ def check_alerts(city: str = DEFAULT_CITY, force_demo: bool = False) -> dict:
     Returns the fired alerts (empty list = all clear).
     """
     init_db()  # idempotent; ensures tables exist outside FastAPI lifespan
-    cfg = CITY_REGISTRY.get(city, CITY_REGISTRY[DEFAULT_CITY])
+    cfg = CITY_REGISTRY.get(city) or CITY_REGISTRY.get(DEFAULT_CITY) or next(iter(CITY_REGISTRY.values()))  
     zones = _generate_grid(city)
     vuln = get_vulnerable_populations(city)
     fired = []
