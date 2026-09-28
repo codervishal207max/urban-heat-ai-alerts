@@ -89,6 +89,11 @@ async function fetchForecast(city) {
   return await apiFetch('/health/forecast?city=' + city);
 }
 
+// ---- Population vulnerability (dedicated, guaranteed-shape endpoint) ----
+async function fetchVulnerablePopulations(city) {
+  return await apiFetch('/health/vulnerable?city=' + city);
+}
+
 // ---- Search any city (not just the curated dropdown list) ----
 async function searchCities(query) {
   return await apiFetch('/cities/search?q=' + encodeURIComponent(query));

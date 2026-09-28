@@ -65,16 +65,36 @@ function cityDisplayName(city) {
   return city.charAt(0).toUpperCase() + city.slice(1);
 }
 
-// ---- Stats (backend-aware) ----
+// ---- Stats — computed DIRECTLY from real per-zone data (same features
+// map.js already fetched), NOT from /zones/summary + a hardcoded mock
+// fallback. The old fallback silently showed DELHI'S numbers for any city
+// where that endpoint was slow/unavailable — this removes that risk
+// entirely by never depending on a separate, possibly-stale summary call. ----
 async function updateStats(city) {
-  const data = (typeof fetchCitySummary === 'function') ? await fetchCitySummary(city) : null;
-  const d = data || (typeof CITY_DATA !== 'undefined' ? CITY_DATA[city] : {}) || {};
-  setText('dash-avg-temp',  fmt(d.avgLST || d.avg_lst || 0) + '°C');
-  setText('dash-max-temp',  fmt(d.maxLST || d.max_lst || 0) + '°C');
-  setText('dash-high-risk', d.highRisk   || d.high_risk_zones || '—');
-  setText('dash-pop-risk',  d.popRisk    || (d.population_at_high_risk
-    ? parseInt(d.population_at_high_risk).toLocaleString('en-IN') : '—'));
-  if (data && data.fromBackend === false) showToast('📴 Demo mode — start backend for live data');
+  let feats = window.currentHeatFeatures;
+  if (!feats || !feats.length) {
+    const geojson = (typeof fetchHeatMap === 'function') ? await fetchHeatMap(city) : null;
+    feats = geojson && geojson.features ? geojson.features : [];
+  }
+
+  if (!feats.length) {
+    setText('dash-avg-temp', '—'); setText('dash-max-temp', '—');
+    setText('dash-high-risk', '—'); setText('dash-pop-risk', '—');
+    updateLiveBadge(city);
+    return;
+  }
+
+  const n = feats.length;
+  const lsts = feats.map(f => f.properties.lst || 0);
+  const avgLst = lsts.reduce((s, v) => s + v, 0) / n;
+  const maxLst = Math.max(...lsts);
+  const highRiskZones = feats.filter(f => ['High', 'Very High'].includes(f.properties.risk_level));
+  const popAtRisk = highRiskZones.reduce((s, f) => s + (f.properties.population_density || 0), 0);
+
+  setText('dash-avg-temp', fmt(avgLst) + '°C');
+  setText('dash-max-temp', fmt(maxLst) + '°C');
+  setText('dash-high-risk', highRiskZones.length.toLocaleString('en-IN'));
+  setText('dash-pop-risk', popAtRisk.toLocaleString('en-IN'));
   updateLiveBadge(city);
 }
 
@@ -139,6 +159,44 @@ async function renderAlerts(city) {
   const badge = document.getElementById('city-alert-badge');
   if (badge) { badge.textContent = extreme+' EXTREME'; badge.classList.toggle('hidden', extreme === 0); }
   logActivity('heat_alert', 'Alerts loaded for '+cityDisplayName(city), city);
+}
+
+// ---- Today's Conditions summary ----
+// "[City] — Today (date): Heat [status], Rain [status], Landslide [status]",
+// each color-coded (green = normal, red = alert) from the SAME real
+// per-zone data already loaded — no separate fetch.
+async function renderTodaySummary(city) {
+  const el = document.getElementById('today-summary');
+  if (!el) return;
+
+  let feats = window.currentHeatFeatures;
+  if (!feats || !feats.length) {
+    const geojson = (typeof fetchHeatMap === 'function') ? await fetchHeatMap(city) : null;
+    feats = geojson && geojson.features ? geojson.features : [];
+  }
+  if (!feats.length) { el.innerHTML = ''; return; }
+
+  const n = feats.length;
+  const avgLst = feats.reduce((s, f) => s + (f.properties.lst || 0), 0) / n;
+  const avgRain = feats.reduce((s, f) => s + (f.properties.rainfall_48h_mm || 0), 0) / n;
+  const anyLandslide = feats.some(f => ['High', 'Moderate'].includes(f.properties.landslide_risk_level));
+
+  const heatAlert = avgLst >= 38;
+  const rainAlert = avgRain >= 20;
+
+  const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  const cityName = cityDisplayName(city);
+
+  const badge = (label, isAlert, detail) =>
+    `<div class="ts-badge ${isAlert ? 'ts-alert' : 'ts-normal'}">${isAlert ? '⚠️' : '✅'} ${label}: ${detail}</div>`;
+
+  el.innerHTML = `
+    <b>${cityName}</b>
+    <span class="ts-date">📅 ${dateStr}</span>
+    ${badge('Heat', heatAlert, heatAlert ? `High (${avgLst.toFixed(1)}°C avg)` : `Normal (${avgLst.toFixed(1)}°C avg)`)}
+    ${badge('Rain', rainAlert, rainAlert ? `${avgRain.toFixed(0)}mm — active` : 'No significant rainfall')}
+    ${badge('Landslide', anyLandslide, anyLandslide ? 'Risk zones active' : 'Not occurring')}
+  `;
 }
 
 // ---- Recommendations — powers BOTH the "AI Insights" panel (rich HEV
@@ -242,24 +300,19 @@ async function renderLandStats(city) {
   }
 }
 
-// ---- Population Vulnerability ----
-// ASSUMPTION: hits the existing fetchForecast() → /health/forecast endpoint,
-// expecting a `demographics` object shaped like health_service.py's
-// get_vulnerable_populations() (elderly_65_plus, children_under_5,
-// outdoor_workers, low_income_households) — the same function
-// report_service.py already uses for the PDF report. If the route or shape
-// differs, this shows a graceful fallback instead of crashing; send
-// backend/api/health.py to confirm the exact route if it doesn't populate.
+// ---- Population Vulnerability — dedicated /health/vulnerable endpoint
+// (backend/api/vulnerability.py), reusing the SAME health_service function
+// report_service.py already uses successfully for PDF reports. ----
 async function renderVulnerability(city) {
   const el = document.getElementById('vulnerability-panel');
   if (!el) return;
   el.innerHTML = '<div class="alert-loading">Loading…</div>';
 
-  const data = (typeof fetchForecast === 'function') ? await fetchForecast(city) : null;
-  const demo = data && (data.demographics || (data.health_summary && data.health_summary.demographics));
+  const data = (typeof fetchVulnerablePopulations === 'function') ? await fetchVulnerablePopulations(city) : null;
+  const demo = data && data.demographics;
 
   if (!demo) {
-    el.innerHTML = '<div class="alert-loading">Vulnerability breakdown unavailable — check /health/forecast response shape.</div>';
+    el.innerHTML = '<div class="alert-loading">Vulnerability breakdown unavailable.</div>';
     return;
   }
 
@@ -283,7 +336,7 @@ async function renderVulnerability(city) {
 
 // ---- Charts ----
 async function initCharts(city) {
-  const mockD = (typeof CITY_DATA !== 'undefined') ? CITY_DATA[city] : {};
+  const mockD = (typeof CITY_DATA !== 'undefined' && CITY_DATA[city]) ? CITY_DATA[city] : {};
   const base  = mockD.avgLST || 36;
 
 
@@ -349,7 +402,7 @@ async function runSimulation() {
   const scenario = document.getElementById('sim-scenario').value;
   const coverage = parseInt(document.getElementById('sim-coverage').value);
   const meta     = SIM_META[scenario];
-  const mockD    = (typeof CITY_DATA !== 'undefined') ? CITY_DATA[currentCity] : {};
+  const mockD    = (typeof CITY_DATA !== 'undefined' && CITY_DATA[currentCity]) ? CITY_DATA[currentCity] : {};
 
   // Try backend
   let result = (typeof fetchSimulation === 'function')
@@ -429,6 +482,7 @@ async function switchCityDashboard(city) {
 
   await Promise.all([
     updateStats(city),
+    renderTodaySummary(city),
     renderAlerts(city),
     renderRecommendations(city),
     renderLandStats(city),
@@ -481,14 +535,14 @@ function initCitySearch() {
           if (typeof CITY_MAP_CFG !== 'undefined') {
             CITY_MAP_CFG[reg.city_key] = { name: reg.name, center: [reg.lat, reg.lon], zoom: 11, baseLST: 30, heatFactor: 8 };
           }
-          // Also add it to the curated dropdown so it's selectable again later.
-          const sel = document.getElementById('city-select');
-          if (sel && !sel.querySelector(`option[value="${reg.city_key}"]`)) {
-            const opt = document.createElement('option');
-            opt.value = reg.city_key; opt.textContent = reg.name;
-            sel.appendChild(opt);
-          }
-          if (sel) sel.value = reg.city_key;
+
+          // Persist the selection so navigating Home → Dashboard (or a
+          // refresh) doesn't lose it — stays selected until the user
+          // searches a different city, not just for this page view.
+          try {
+            sessionStorage.setItem('uhai_last_city', JSON.stringify(
+              { key: reg.city_key, name: reg.name, lat: reg.lat, lon: reg.lon }));
+          } catch (e) {}
 
           selectCity(reg.city_key);
         });
@@ -530,7 +584,33 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   initCitySearch();
-  showEmptyState();
+
+  // Restore the last city the user selected — but ONLY on navigation
+  // (clicking Home ↔ Dashboard), not on a page refresh. The Navigation
+  // Timing API tells us which one just happened: a real reload clears the
+  // saved city (fresh start); any other navigation type restores it.
+  const navEntry = performance.getEntriesByType('navigation')[0];
+  const wasReload = navEntry ? navEntry.type === 'reload' : (performance.navigation && performance.navigation.type === 1);
+  if (wasReload) {
+    try { sessionStorage.removeItem('uhai_last_city'); } catch (e) {}
+  }
+
+  let restored = null;
+  try {
+    restored = JSON.parse(sessionStorage.getItem('uhai_last_city') || 'null');
+  } catch (e) {}
+
+  if (restored && restored.key) {
+    if (typeof CITY_MAP_CFG !== 'undefined') {
+      CITY_MAP_CFG[restored.key] = { name: restored.name, center: [restored.lat, restored.lon], zoom: 11, baseLST: 30, heatFactor: 8 };
+    }
+    const input = document.getElementById('city-search-input');
+    if (input) input.value = restored.name;
+    selectCity(restored.key);
+  } else {
+    showEmptyState();
+  }
+
   initClimateBanner();
 });
 

@@ -351,6 +351,38 @@ input[type=range] { accent-color:var(--accent); }
 .map-legend div { display:flex; align-items:center; gap:6px; margin:3px 0; }
 .map-legend span { display:inline-block; width:14px; height:14px; border-radius:3px; }
 
+/* ==== MAP POPUPS ==== */
+.heat-zone-popup .leaflet-popup-content-wrapper {
+  background: rgba(10, 10, 26, 0.96);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  box-shadow: 0 18px 38px rgba(0,0,0,0.45);
+}
+.heat-zone-popup .leaflet-popup-content {
+  margin: 12px 14px;
+  min-width: 180px;
+  line-height: 1.7;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+.heat-zone-popup .leaflet-popup-tip {
+  background: rgba(10, 10, 26, 0.96);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.heat-zone-popup .leaflet-container a.leaflet-popup-close-button {
+  color: var(--text2);
+  top: 8px;
+  right: 8px;
+}
+.heat-zone-popup .leaflet-container a.leaflet-popup-close-button:hover {
+  color: var(--text);
+}
+.heat-zone-popup b,
+.heat-zone-popup strong {
+  color: #ffffff;
+}
+
 /* ==== MODAL ==== */
 .modal-overlay {
   display:none; position:fixed; inset:0; z-index:200;

@@ -13,7 +13,7 @@ FRONTEND_DIR = BASE_DIR / "frontend"
 # real elevation data (climate_risk_service.py) rather than being faked.
 CITY_REGISTRY = {
     # --- Original 10 ---
-    "delhi":         {"name": "Delhi NCR",         "lat": 28.61, "lon": 77.21, "area_km2": 1484, "population": 31_000_000, "seed": 42},
+    "delhi":         {"name": "Delhi NCR",        "lat": 28.61, "lon": 77.21, "area_km2": 1484, "population": 31_000_000, "seed": 42},
     "mumbai":        {"name": "Mumbai",            "lat": 19.07, "lon": 72.87, "area_km2": 603,  "population": 20_700_000, "seed": 43},
     "bangalore":     {"name": "Bangalore",         "lat": 12.97, "lon": 77.59, "area_km2": 741,  "population": 12_500_000, "seed": 44},
     "chennai":       {"name": "Chennai",           "lat": 13.08, "lon": 80.27, "area_km2": 426,  "population": 10_900_000, "seed": 45},
@@ -71,7 +71,10 @@ CITY_REGISTRY = {
     "siliguri":      {"name": "Siliguri",           "lat": 26.73, "lon": 88.43, "area_km2": 41,   "population": 700_000,    "seed": 92},
 }
 
-DEFAULT_CITY = "delhi"
+DEFAULT_CITY = ""  # intentionally invalid — no city should silently default to Delhi (or
+                    # anywhere else) anymore; the frontend always sends an explicit city_key
+                    # now, and any endpoint that falls through to this returns a clean 404
+                    # instead of quietly showing Delhi's data.
 
 # ── Grid Parameters ────────────────────────────────────────────────────────────
 GRID_ROWS = 30
