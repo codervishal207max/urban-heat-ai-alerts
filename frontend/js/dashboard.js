@@ -334,6 +334,423 @@ async function renderVulnerability(city) {
   }).join('');
 }
 
+
+// ============================================================
+// Healthcare Risk Advisory
+// Uses the same real city-level environmental + vulnerability
+// data already loaded by the dashboard.
+// ============================================================
+
+async function renderHealthcareAdvisory(city) {
+
+  const content = document.getElementById('healthcare-content');
+  const badge = document.getElementById('health-risk-badge');
+
+  if (!content || !badge) return;
+
+  content.innerHTML = `
+    <div class="healthcare-loading">
+      🔄 Analysing environmental health risk...
+    </div>
+  `;
+
+  // ----------------------------------------------------------
+  // Get the same heat-map features already loaded by map.js
+  // ----------------------------------------------------------
+
+  let feats = window.currentHeatFeatures;
+
+  if (!feats || !feats.length) {
+    const geojson =
+      (typeof fetchHeatMap === 'function')
+        ? await fetchHeatMap(city)
+        : null;
+
+    feats = geojson && geojson.features
+      ? geojson.features
+      : [];
+  }
+
+  if (!feats.length) {
+
+    badge.textContent = 'LOW';
+    badge.className = 'health-risk-badge low';
+
+    content.innerHTML = `
+      <div class="healthcare-loading">
+        📍 Select a city to generate healthcare advisory.
+      </div>
+    `;
+
+    return;
+  }
+
+  // ----------------------------------------------------------
+  // Environmental conditions
+  // ----------------------------------------------------------
+
+  const n = feats.length;
+
+  const avgLst =
+    feats.reduce(
+      (sum, f) => sum + (f.properties.lst || 0),
+      0
+    ) / n;
+
+  const maxLst = Math.max(
+    ...feats.map(f => f.properties.lst || 0)
+  );
+
+  const avgRain =
+    feats.reduce(
+      (sum, f) =>
+        sum + (f.properties.rainfall_48h_mm || 0),
+      0
+    ) / n;
+
+  const landslideActive =
+    feats.some(f =>
+      ['High', 'Moderate'].includes(
+        f.properties.landslide_risk_level
+      )
+    );
+
+  // ----------------------------------------------------------
+  // Heat risk
+  //
+  // NOTE:
+  // LST is satellite Land Surface Temperature.
+  // It is used here as an environmental heat-risk indicator,
+  // not as a direct measurement of human body temperature.
+  // ----------------------------------------------------------
+
+  let heatLevel = 'LOW';
+
+  if (avgLst >= 42) {
+    heatLevel = 'EXTREME';
+  } else if (avgLst >= 38) {
+    heatLevel = 'HIGH';
+  } else if (avgLst >= 35) {
+    heatLevel = 'MODERATE';
+  }
+
+  // ----------------------------------------------------------
+  // Rain risk
+  // Same threshold already used by renderTodaySummary()
+  // ----------------------------------------------------------
+
+  const heavyRain = avgRain >= 20;
+
+  // ----------------------------------------------------------
+  // Overall environmental health risk
+  // ----------------------------------------------------------
+
+  let overallRisk = 'LOW';
+
+  if (heatLevel === 'EXTREME') {
+    overallRisk = 'EXTREME';
+  } else if (
+    heatLevel === 'HIGH' ||
+    heavyRain ||
+    landslideActive
+  ) {
+    overallRisk = 'HIGH';
+  } else if (heatLevel === 'MODERATE') {
+    overallRisk = 'MODERATE';
+  }
+
+  // ----------------------------------------------------------
+  // Badge
+  // ----------------------------------------------------------
+
+  badge.textContent = overallRisk;
+  badge.className =
+    'health-risk-badge ' + overallRisk.toLowerCase();
+
+  // ----------------------------------------------------------
+  // Active hazards
+  // ----------------------------------------------------------
+
+  const hazards = [];
+
+  if (heatLevel !== 'LOW') {
+    hazards.push({
+      icon:
+        heatLevel === 'EXTREME'
+          ? '🔥'
+          : '🌡️',
+
+      title:
+        heatLevel === 'EXTREME'
+          ? 'Extreme heat conditions'
+          : heatLevel === 'HIGH'
+            ? 'High heat conditions'
+            : 'Elevated heat conditions',
+
+      detail:
+        `Avg LST ${avgLst.toFixed(1)}°C`
+    });
+  }
+
+  if (heavyRain) {
+    hazards.push({
+      icon: '🌧️',
+      title: 'Heavy rainfall conditions',
+      detail: `${avgRain.toFixed(1)} mm rainfall / 48h`
+    });
+  }
+
+  if (landslideActive) {
+    hazards.push({
+      icon: '⛰️',
+      title: 'Landslide risk zones active',
+      detail: 'Moderate/High risk areas detected'
+    });
+  }
+
+  // ----------------------------------------------------------
+  // Potential health impacts
+  // ----------------------------------------------------------
+
+  const impacts = [];
+
+  if (heatLevel === 'EXTREME' || heatLevel === 'HIGH') {
+    impacts.push(
+      'Dizziness or light-headedness',
+      'Fatigue and weakness',
+      'Dehydration',
+      'Heat exhaustion'
+    );
+  } else if (heatLevel === 'MODERATE') {
+    impacts.push(
+      'Fatigue during prolonged heat exposure',
+      'Dehydration risk'
+    );
+  }
+
+  if (heavyRain) {
+    impacts.push(
+      'Mobility and water-exposure hazards'
+    );
+  }
+
+  if (landslideActive) {
+    impacts.push(
+      'Injury risk near unstable slopes'
+    );
+  }
+
+  if (!impacts.length) {
+    impacts.push(
+      'No major environmental health hazard detected'
+    );
+  }
+
+  // ----------------------------------------------------------
+  // Recommendations
+  // ----------------------------------------------------------
+
+  const recommendations = [];
+
+  if (heatLevel === 'EXTREME' || heatLevel === 'HIGH') {
+
+    recommendations.push(
+      'Drink water frequently and maintain hydration.',
+      'Avoid prolonged outdoor exposure during peak heat.',
+      'Use shaded or cool areas whenever possible.',
+      'Monitor children, elderly people and outdoor workers.'
+    );
+
+  } else if (heatLevel === 'MODERATE') {
+
+    recommendations.push(
+      'Stay hydrated during outdoor activities.',
+      'Take breaks from prolonged heat exposure.'
+    );
+  }
+
+  if (heavyRain) {
+
+    recommendations.push(
+      'Avoid flooded roads and waterlogged areas.',
+      'Follow local weather and emergency advisories.'
+    );
+  }
+
+  if (landslideActive) {
+
+    recommendations.push(
+      'Avoid unstable slopes and landslide-prone areas.',
+      'Follow local evacuation or emergency instructions.'
+    );
+  }
+
+  if (!recommendations.length) {
+
+    recommendations.push(
+      'Continue normal precautions and monitor changing conditions.'
+    );
+  }
+
+  // ----------------------------------------------------------
+  // Population vulnerability
+  // Uses the existing backend endpoint already used by
+  // renderVulnerability().
+  // ----------------------------------------------------------
+
+  let vulnerabilityText = 'Data unavailable';
+
+  try {
+
+    const vulnData =
+      (typeof fetchVulnerablePopulations === 'function')
+        ? await fetchVulnerablePopulations(city)
+        : null;
+
+    const demo =
+      vulnData && vulnData.demographics;
+
+    if (demo) {
+
+      const vulnerablePopulation =
+        (demo.elderly_65_plus || 0) +
+        (demo.children_under_5 || 0) +
+        (demo.outdoor_workers || 0) +
+        (demo.low_income_households || 0);
+
+      if (vulnerablePopulation > 0) {
+
+        vulnerabilityText =
+          vulnerablePopulation.toLocaleString('en-IN');
+      }
+    }
+
+  } catch (error) {
+
+    console.warn(
+      'Healthcare vulnerability data unavailable:',
+      error
+    );
+  }
+
+  // ----------------------------------------------------------
+  // Render
+  // ----------------------------------------------------------
+
+  content.innerHTML = `
+
+    <div class="healthcare-section">
+
+      <div class="healthcare-section-title">
+        Current Conditions
+      </div>
+
+      <div class="healthcare-data-row">
+        <span>🌡️ Avg LST</span>
+        <span class="healthcare-data-value">
+          ${avgLst.toFixed(1)}°C
+        </span>
+      </div>
+
+      <div class="healthcare-data-row">
+        <span>🔥 Max LST</span>
+        <span class="healthcare-data-value">
+          ${maxLst.toFixed(1)}°C
+        </span>
+      </div>
+
+      <div class="healthcare-data-row">
+        <span>🌧️ Rainfall</span>
+        <span class="healthcare-data-value">
+          ${avgRain.toFixed(1)} mm
+        </span>
+      </div>
+
+      <div class="healthcare-data-row">
+        <span>👥 Vulnerable Population</span>
+        <span class="healthcare-data-value">
+          ${vulnerabilityText}
+        </span>
+      </div>
+
+    </div>
+
+
+    <div class="healthcare-section">
+
+      <div class="healthcare-section-title">
+        Active Environmental Risks
+      </div>
+
+      ${
+        hazards.length
+          ? hazards.map(h => `
+              <div class="healthcare-hazard">
+                <span class="healthcare-hazard-icon">
+                  ${h.icon}
+                </span>
+
+                <div class="healthcare-hazard-text">
+                  <b>${h.title}</b><br>
+                  ${h.detail}
+                </div>
+              </div>
+            `).join('')
+          : `
+            <div class="healthcare-hazard"
+                 style="border-left-color:#22c55e;">
+              <span class="healthcare-hazard-icon">✅</span>
+              <div class="healthcare-hazard-text">
+                No significant environmental hazard detected.
+              </div>
+            </div>
+          `
+      }
+
+    </div>
+
+
+    <div class="healthcare-section">
+
+      <div class="healthcare-section-title">
+        Potential Health Impacts
+      </div>
+
+      <div class="healthcare-impact">
+        ${impacts.map(i => `• ${i}`).join('<br>')}
+      </div>
+
+    </div>
+
+
+    <div class="healthcare-section">
+
+      <div class="healthcare-section-title">
+        Recommended Actions
+      </div>
+
+      ${
+        recommendations
+          .map(r => `
+            <div class="healthcare-recommendation">
+              ${r}
+            </div>
+          `)
+          .join('')
+      }
+
+    </div>
+  `;
+
+  logActivity(
+    'healthcare_advisory',
+    'Healthcare advisory generated for ' +
+      cityDisplayName(city),
+    overallRisk
+  );
+}
+
+
 // ---- Charts ----
 async function initCharts(city) {
   const mockD = (typeof CITY_DATA !== 'undefined' && CITY_DATA[city]) ? CITY_DATA[city] : {};
@@ -487,6 +904,7 @@ async function switchCityDashboard(city) {
     renderRecommendations(city),
     renderLandStats(city),
     renderVulnerability(city),
+    renderHealthcareAdvisory(city),
     initCharts(city),
   ]);
 
