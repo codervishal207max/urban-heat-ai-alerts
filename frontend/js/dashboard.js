@@ -161,6 +161,44 @@ async function renderAlerts(city) {
   logActivity('heat_alert', 'Alerts loaded for '+cityDisplayName(city), city);
 }
 
+// ---- Today's Conditions summary ----
+// "[City] — Today (date): Heat [status], Rain [status], Landslide [status]",
+// each color-coded (green = normal, red = alert) from the SAME real
+// per-zone data already loaded — no separate fetch.
+async function renderTodaySummary(city) {
+  const el = document.getElementById('today-summary');
+  if (!el) return;
+
+  let feats = window.currentHeatFeatures;
+  if (!feats || !feats.length) {
+    const geojson = (typeof fetchHeatMap === 'function') ? await fetchHeatMap(city) : null;
+    feats = geojson && geojson.features ? geojson.features : [];
+  }
+  if (!feats.length) { el.innerHTML = ''; return; }
+
+  const n = feats.length;
+  const avgLst = feats.reduce((s, f) => s + (f.properties.lst || 0), 0) / n;
+  const avgRain = feats.reduce((s, f) => s + (f.properties.rainfall_48h_mm || 0), 0) / n;
+  const anyLandslide = feats.some(f => ['High', 'Moderate'].includes(f.properties.landslide_risk_level));
+
+  const heatAlert = avgLst >= 38;
+  const rainAlert = avgRain >= 20;
+
+  const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  const cityName = cityDisplayName(city);
+
+  const badge = (label, isAlert, detail) =>
+    `<div class="ts-badge ${isAlert ? 'ts-alert' : 'ts-normal'}">${isAlert ? '⚠️' : '✅'} ${label}: ${detail}</div>`;
+
+  el.innerHTML = `
+    <b>${cityName}</b>
+    <span class="ts-date">📅 ${dateStr}</span>
+    ${badge('Heat', heatAlert, heatAlert ? `High (${avgLst.toFixed(1)}°C avg)` : `Normal (${avgLst.toFixed(1)}°C avg)`)}
+    ${badge('Rain', rainAlert, rainAlert ? `${avgRain.toFixed(0)}mm — active` : 'No significant rainfall')}
+    ${badge('Landslide', anyLandslide, anyLandslide ? 'Risk zones active' : 'Not occurring')}
+  `;
+}
+
 // ---- Recommendations — powers BOTH the "AI Insights" panel (rich HEV
 // breakdown cards) and the "Priority Zones" list (compact dot list), from
 // ONE backend call so there's no duplicate fetch. ----
@@ -262,24 +300,19 @@ async function renderLandStats(city) {
   }
 }
 
-// ---- Population Vulnerability ----
-// ASSUMPTION: hits the existing fetchForecast() → /health/forecast endpoint,
-// expecting a `demographics` object shaped like health_service.py's
-// get_vulnerable_populations() (elderly_65_plus, children_under_5,
-// outdoor_workers, low_income_households) — the same function
-// report_service.py already uses for the PDF report. If the route or shape
-// differs, this shows a graceful fallback instead of crashing; send
-// backend/api/health.py to confirm the exact route if it doesn't populate.
+// ---- Population Vulnerability — dedicated /health/vulnerable endpoint
+// (backend/api/vulnerability.py), reusing the SAME health_service function
+// report_service.py already uses successfully for PDF reports. ----
 async function renderVulnerability(city) {
   const el = document.getElementById('vulnerability-panel');
   if (!el) return;
   el.innerHTML = '<div class="alert-loading">Loading…</div>';
 
-  const data = (typeof fetchForecast === 'function') ? await fetchForecast(city) : null;
-  const demo = data && (data.demographics || (data.health_summary && data.health_summary.demographics));
+  const data = (typeof fetchVulnerablePopulations === 'function') ? await fetchVulnerablePopulations(city) : null;
+  const demo = data && data.demographics;
 
   if (!demo) {
-    el.innerHTML = '<div class="alert-loading">Vulnerability breakdown unavailable — check /health/forecast response shape.</div>';
+    el.innerHTML = '<div class="alert-loading">Vulnerability breakdown unavailable.</div>';
     return;
   }
 
@@ -449,6 +482,7 @@ async function switchCityDashboard(city) {
 
   await Promise.all([
     updateStats(city),
+    renderTodaySummary(city),
     renderAlerts(city),
     renderRecommendations(city),
     renderLandStats(city),
@@ -506,7 +540,7 @@ function initCitySearch() {
           // refresh) doesn't lose it — stays selected until the user
           // searches a different city, not just for this page view.
           try {
-            localStorage.setItem('uhai_last_city', JSON.stringify(
+            sessionStorage.setItem('uhai_last_city', JSON.stringify(
               { key: reg.city_key, name: reg.name, lat: reg.lat, lon: reg.lon }));
           } catch (e) {}
 
@@ -551,12 +585,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initCitySearch();
 
-  // Restore the last city the user selected (persists across Home ↔
-  // Dashboard navigation and page refreshes) — only shows the "select
-  // your city" empty state if nothing was ever selected.
+  // Restore the last city the user selected — but ONLY on navigation
+  // (clicking Home ↔ Dashboard), not on a page refresh. The Navigation
+  // Timing API tells us which one just happened: a real reload clears the
+  // saved city (fresh start); any other navigation type restores it.
+  const navEntry = performance.getEntriesByType('navigation')[0];
+  const wasReload = navEntry ? navEntry.type === 'reload' : (performance.navigation && performance.navigation.type === 1);
+  if (wasReload) {
+    try { sessionStorage.removeItem('uhai_last_city'); } catch (e) {}
+  }
+
   let restored = null;
   try {
-    restored = JSON.parse(localStorage.getItem('uhai_last_city') || 'null');
+    restored = JSON.parse(sessionStorage.getItem('uhai_last_city') || 'null');
   } catch (e) {}
 
   if (restored && restored.key) {

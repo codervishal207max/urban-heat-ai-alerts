@@ -109,6 +109,21 @@ _grid_cache: dict = {}
 GRID_CACHE_TTL_SEC = 180  # 3 min — long enough to cover one dashboard load's several calls
 
 
+def _urban_cores(seed: int) -> list:
+    """
+    2-3 deterministic, seed-driven 'urban core' positions (offset from grid
+    center) per city, instead of always one dead-center circle. This is why
+    every city used to LOOK identical (just re-centered) — the same perfect
+    radial pattern every time. Each city's seed now produces a genuinely
+    different, asymmetric hotspot layout (still fully deterministic/
+    reproducible — no new data source needed for this).
+    """
+    rng = random.Random(seed)
+    n_cores = rng.randint(2, 3)
+    return [(rng.uniform(-0.55, 0.55), rng.uniform(-0.55, 0.55), rng.uniform(0.75, 1.0))
+            for _ in range(n_cores)]
+
+
 def _generate_grid_uncached(city: str) -> List[Dict]:
     cfg = CITY_REGISTRY.get(city)
     if cfg is None:
@@ -120,13 +135,16 @@ def _generate_grid_uncached(city: str) -> List[Dict]:
     lat_off = clat - (GRID_ROWS / 2) * LAT_STEP
     lon_off = clon - (GRID_COLS / 2) * LON_STEP
     total_pop = cfg["population"]
+    cores = _urban_cores(seed)
     zones = []
     for i in range(GRID_ROWS):
         for j in range(GRID_COLS):
             lat = lat_off + i * LAT_STEP
             lon = lon_off + j * LON_STEP
-            d = math.hypot((i - GRID_ROWS/2)/(GRID_ROWS/2), (j - GRID_COLS/2)/(GRID_COLS/2))
-            urban = math.exp(-2.2 * d)
+            ni = (i - GRID_ROWS/2) / (GRID_ROWS/2)
+            nj = (j - GRID_COLS/2) / (GRID_COLS/2)
+            urban = max(strength * math.exp(-2.2 * math.hypot(ni - dx, nj - dy))
+                        for dx, dy, strength in cores)
             noise = seeded_noise(i, j, seed)
 
             # NDVI has a typical value for a given built-up density (urban), plus an

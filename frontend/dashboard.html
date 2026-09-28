@@ -54,11 +54,10 @@
       <a href="#section-controls" class="nav-item"><span class="nav-icon">⚙️</span> Simulation</a>
       <a href="database.html" class="nav-item"><span class="nav-icon">🗂️</span> Data &amp; Layers</a>
       <a href="javascript:void(0)" id="download-report" class="nav-item"><span class="nav-icon">📄</span> Reports</a>
+      <div style="text-align: center; padding: 12px; margin: 20px auto; background: rgba(255, 255, 255, 0.03); border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px; color: #94a3b8; max-width: 900px; border-radius: 6px;">
+  ℹ️ <b>Note:</b> The temperature shown on the dashboard is <b>Land Surface Temperature (LST)</b> (satellite thermal data), which naturally runs higher than standard ambient air temperature.
+</div>
 
-      <!-- LST Note placed right between Reports and the Footer Card -->
-      <div style="padding: 10px; margin: 15px 10px; background: rgba(255,255,255,0.03); border-radius: 6px; font-size: 10px; color: #94a3b8; line-height: 1.4; border: 1px solid rgba(255,255,255,0.05);">
-        ℹ️ <b>Note:</b> LST is ground skin temp (satellite thermal data), higher than normal air temp.
-      </div>
 
       <div class="sidebar-footer-card">
         <b>🍃 AI for Climate-Resilient Cities</b>
@@ -70,6 +69,8 @@
     <main class="main">
 
       <!-- Stat strip (real backend data) -->
+      <div id="today-summary" class="today-summary"></div>
+
       <div class="stats-row">
         <div class="stat-card">
           <div class="stat-top"><div class="stat-icon" style="background:rgba(56,189,248,0.15);color:#38bdf8;">🌡️</div><div class="stat-label">Avg LST</div></div>
