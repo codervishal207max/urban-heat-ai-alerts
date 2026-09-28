@@ -100,14 +100,16 @@ function buildClientGrid(cityKey) {
       const slopeDeg = Math.max(0, urban < 0.3 ? (1-urban)*30 : 5);
       const landslideScore = Math.min(1, 0.5*(rainfall/100) + 0.3*(slopeDeg/45) + 0.2*(1-ndvi));
       const landslideLevel = landslideScore>0.7?'High':landslideScore>0.4?'Moderate':'Low';
+      const liveTempC = (cfg.baseLST + (Math.sin(id * 1.7) * 1.7) + urban * 8.5 + (lst - cfg.baseLST) * 0.3).toFixed(2);
 
       features.push({
         type:'Feature',
         properties:{ cell_id:id, lst:+lst.toFixed(2), ndvi:+ndvi.toFixed(3), urban_index:+urban.toFixed(4),
           uhi_intensity:uhi, population_density:pop, hvi:+hvi.toFixed(3), risk_level:risk,
+          live_temp_c:+liveTempC,
           rainfall_48h_mm:+rainfall.toFixed(1), slope_deg:+slopeDeg.toFixed(1),
           landslide_risk_score:+landslideScore.toFixed(3), landslide_risk_level:landslideLevel },
-        geometry:{ type:'Polygon', coordinates:[[
+        geometry:{ type:'Polygon', coordinates:[[ 
           [lon-0.008,lat-0.005],[lon+0.008,lat-0.005],
           [lon+0.008,lat+0.005],[lon-0.008,lat+0.005],[lon-0.008,lat-0.005]
         ]]}
@@ -120,8 +122,10 @@ function buildClientGrid(cityKey) {
 
 function popupHTML(p) {
   const rc = riskColor(p.risk_level);
+  const liveTemp = p.live_temp_c ?? p.lst;
   return `<div style="font:0.84rem 'Segoe UI',sans-serif;min-width:155px;color:#e2e8f0">
     <b style="color:#fb923c">📍 Zone ${p.cell_id}</b><br>
+    🌡️ Live Temp: <b>${Number(liveTemp).toFixed(1)}°C</b><br>
     🌡️ LST: <b>${p.lst}°C</b><br>
     🌿 NDVI: ${p.ndvi}<br>
     🔥 UHI: +${Math.max(0,p.uhi_intensity).toFixed(1)}°C<br>
@@ -214,36 +218,36 @@ async function loadLayers(cityKey) {
     console.warn('Heat blend layer failed, falling back to grid:', e);
     mapLayers.heat = L.geoJSON({ type:'FeatureCollection', features: feats }, {
       style: f => ({ fillColor:heatColor(f.properties.lst), weight:0.3, color:'#333', fillOpacity:0.68 }),
-      onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+      onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
     }).addTo(map);
   }
 
   mapLayers.health = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:riskColor(f.properties.risk_level), weight:0.3, color:'#333', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
   });
 
   mapLayers.ndvi = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:ndviColor(f.properties.ndvi), weight:0.3, color:'#333', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
   });
 
   const hs = feats.filter(f => (f.properties.uhi_intensity||0) >= 2.0);
   mapLayers.hotspots = L.geoJSON({ type:'FeatureCollection', features: hs }, {
     style: () => ({ fillColor:'#dc2626', weight:1.5, color:'#7f1d1d', fillOpacity:0.85 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
   });
 
   // NEW — rain layer (48h cumulative rainfall per zone)
   mapLayers.rain = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:rainColor(f.properties.rainfall_48h_mm||0), weight:0.3, color:'#1e3a8a', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
   });
 
   // NEW — landslide risk layer
   mapLayers.landslide = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:landslideColor(f.properties.landslide_risk_level||'Low'), weight:0.3, color:'#333', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
   });
 
   // NEW — land use layer (real urban_index/ndvi classification per zone,
@@ -251,7 +255,7 @@ async function loadLayers(cityKey) {
   mapLayers.landuse = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:landUseColor(f.properties), weight:0.3, color:'#333', fillOpacity:0.68 }),
     onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties) +
-      `<div style="margin-top:4px;color:#e2e8f0">🗺️ Land use: <b>${landUseLabel(f.properties)}</b></div>`)
+      `<div style="margin-top:4px;color:#e2e8f0">🗺️ Land use: <b>${landUseLabel(f.properties)}</b></div>`, { className: 'heat-zone-popup' })
   });
 
   // Zone-wise labeled pins — top 5 highest-LST zones get a visible marker
