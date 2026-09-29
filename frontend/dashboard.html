@@ -58,30 +58,6 @@
   ℹ️ <b>Note:</b> The temperature shown on the dashboard is <b>Land Surface Temperature (LST)</b> (satellite thermal data), which naturally runs higher than standard ambient air temperature.
 </div>
 
-   <!-- Healthcare Risk Advisory -->
-<div class="healthcare-card" id="healthcare-advisory">
-
-  <div class="healthcare-header">
-    <div>
-      <div class="healthcare-title">🏥 Healthcare Advisory</div>
-      <div class="healthcare-subtitle">Environmental health risk</div>
-    </div>
-    <span id="health-risk-badge" class="health-risk-badge low">
-      LOW
-    </span>
-  </div>
-
-  <div id="healthcare-content" class="healthcare-content">
-    <div class="healthcare-loading">
-      📍 Please select your city
-    </div>
-  </div>
-
-  <div class="healthcare-disclaimer">
-    Advisory is risk-based and not a medical diagnosis.
-  </div>
-
-</div>
 
 
       <div class="sidebar-footer-card">
@@ -152,21 +128,7 @@
           </div>
         </div>
 
-        <div class="right-col" id="section-insights">
-          <div class="card insights-card">
-            <div class="card-header"><div class="card-title">💡 AI Insights &amp; Recommendations</div></div>
-            <div id="ai-insights-panel" class="insights-list">
-              <div class="alert-loading">Loading insights…</div>
-            </div>
-          </div>
-
-          <div class="card alerts-card" id="section-controls">
-            <div class="card-header"><div class="card-title">🚨 Heat Alerts</div></div>
-            <div id="heat-alerts-panel" class="heat-alerts-panel">
-              <div class="alert-loading">Loading alerts…</div>
-            </div>
-          </div>
-
+                <div class="right-col" id="section-insights">
           <div class="card sim-card">
             <div class="card-header"><div class="card-title">🧪 Simulation</div></div>
             <div class="simulation-panel">
@@ -183,8 +145,26 @@
               <button id="compare-toggle-btn" class="sim-btn compare-btn">🔀 Compare Before / After</button>
             </div>
           </div>
-        </div>
-      </div>
+
+          <div class="card alerts-card" id="section-controls">
+            <div class="card-header"><div class="card-title">🚨 Heat Alerts</div></div>
+            <div id="heat-alerts-panel" class="heat-alerts-panel">
+              <div class="alert-loading">Loading alerts…</div>
+            </div>
+          </div>
+
+          <div class="card insights-card">
+            <div class="card-header"><div class="card-title">💡 Risk &amp; Health Report</div></div>
+            <div style="padding:16px;">
+              <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:14px;">
+                Live risk analysis with problems &amp; solutions, plus healthcare advisory for this city.
+              </p>
+              <button id="open-insights-report" class="sim-btn" style="width:100%;">📋 View Full Report</button>
+            </div>
+            <div id="ai-insights-panel" style="display:none;"></div>
+          </div>
+        </div> 
+      </div> 
 
       <!-- Trend + Land Use + Priority Zones -->
       <div class="charts-row" id="section-trend">
@@ -222,6 +202,34 @@
     </div>
   </footer>
 
+    <!-- Risk & Health Report Modal -->
+  <div id="insights-modal" class="modal-overlay">
+    <div class="modal" style="max-width:700px; max-height:85vh; overflow-y:auto;">
+      <div class="modal-header">
+        <h3>📋 Risk &amp; Health Report — <span id="insights-modal-city"></span></h3>
+        <button id="insights-modal-close" class="modal-close">&times;</button>
+      </div>
+      <div style="padding:20px;">
+        <h4 style="margin-bottom:12px;">🔥 Heat Risk — Human Health Impact &amp; How to Reduce It</h4>
+        <div id="insights-modal-risk" class="insights-list"></div>
+
+        <h4 style="margin:28px 0 12px;">🏥 Healthcare Advisory</h4>
+        <div class="healthcare-card" id="healthcare-advisory" style="background:transparent; border:none; padding:0;">
+          <div class="healthcare-header">
+            <div>
+              <div class="healthcare-subtitle">Environmental health risk</div>
+            </div>
+            <span id="health-risk-badge" class="health-risk-badge low">LOW</span>
+          </div>
+          <div id="healthcare-content" class="healthcare-content">
+            <div class="healthcare-loading">📍 Please select your city</div>
+          </div>
+          <div class="healthcare-disclaimer">Advisory is risk-based and not a medical diagnosis.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <!-- Simulation Modal -->
   <div id="sim-modal" class="modal-overlay">
     <div class="modal">

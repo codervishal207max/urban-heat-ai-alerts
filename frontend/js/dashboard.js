@@ -204,6 +204,39 @@ async function renderTodaySummary(city) {
 // ONE backend call so there's no duplicate fetch. ----
 const HAZARD_ICON = { heat: '🔥', rain: '🌧️', landslide: '⛰️' };
 const HAZARD_COLOR = { heat: '#f97316', rain: '#38bdf8', landslide: '#eab308' };
+const HEAT_HEALTH_BY_LEVEL = {
+  'Extreme':   { effect: 'High risk of heatstroke, organ stress and heat-related death — especially for children, elderly and outdoor workers.',
+                 action: 'Set up cooling centers & free water points, avoid outdoor work 11am–4pm, prioritize emergency health checks for vulnerable residents.' },
+  'Very High': { effect: 'Heat exhaustion, dehydration, dizziness and muscle cramps are common; elderly and children are especially vulnerable.',
+                 action: 'Increase shaded/green cover urgently, set up hydration points, issue community heat-warning alerts.' },
+  'High':      { effect: 'Fatigue and dehydration risk rises sharply; prolonged outdoor exposure becomes unsafe for vulnerable groups.',
+                 action: 'Plant trees / cool roofs in this zone, avoid strenuous activity at midday, encourage regular hydration.' },
+  'Moderate':  { effect: 'Mild heat discomfort possible for sensitive groups — children, elderly, outdoor workers.',
+                 action: 'Maintain existing green cover, monitor vulnerable residents, keep water accessible.' },
+  'Low':       { effect: 'No significant heat-related health risk currently in this zone.',
+                 action: 'Continue normal precautions and monitor changing conditions.' }
+};
+
+function buildHeatHealthCards(zoneRecs) {
+  if (!zoneRecs || !zoneRecs.length) {
+    return '<div class="alert-loading">No zone risk data available right now.</div>';
+  }
+  return zoneRecs.slice(0, 5).map(z => {
+    const level = z.risk_level || 'Low';
+    const info = HEAT_HEALTH_BY_LEVEL[level] || HEAT_HEALTH_BY_LEVEL['Low'];
+    const color = HAZARD_COLOR['heat'] || '#f97316';
+    return `<div class="insight-item">
+      <div class="insight-icon" style="background:${color}22;color:${color}">🌡️</div>
+      <div class="insight-body">
+        <div class="insight-title">Zone ${z.cell_id} — ${level} heat risk</div>
+        <div class="insight-desc">
+          <b>Health impact:</b> ${info.effect}<br>
+          <b>How to reduce:</b> ${info.action}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 async function renderRecommendations(city) {
   const listEl = document.getElementById('recommendations-list');
@@ -233,23 +266,12 @@ async function renderRecommendations(city) {
     }).join('');
   }
 
-  // AI Insights — rich HEV breakdown cards (top 4)
+    // Heat Risk → Human Health Impact & Reduction (replaces old raw AI insights)
+  window.__lastZoneRecs = zoneRecs;
   if (insightsEl) {
-    insightsEl.innerHTML = zoneRecs.slice(0, 4).map(z => {
-      const b = z.breakdown;
-      if (!b) return '';
-      const icon = HAZARD_ICON[b.hazard.type] || '⚠️';
-      const color = HAZARD_COLOR[b.hazard.type] || '#f97316';
-      return `<div class="insight-item">
-        <div class="insight-icon" style="background:${color}22;color:${color}">${icon}</div>
-        <div class="insight-body">
-          <div class="insight-title">Zone ${z.cell_id} — ${b.hazard.label}</div>
-          <div class="insight-desc">${b.hazard.detail}<br>Primary driver: <b>${b.primary_driver}</b> · ${b.exposure.detail}</div>
-        </div>
-      </div>`;
-    }).join('');
+    insightsEl.innerHTML = buildHeatHealthCards(zoneRecs);
   }
-}
+} 
 
 // ---- Land Use & Surface Analysis + Green Cover / Recommended Trees ----
 // Derived from real per-zone NDVI + urban_index averaged across the FULL
@@ -989,6 +1011,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const v = document.getElementById('coverage-value'); if (v) v.textContent = e.target.value+'%';
   });
   document.getElementById('run-simulation')?.addEventListener('click', runSimulation);
+    document.getElementById('open-insights-report')?.addEventListener('click', () => {
+    const riskDst = document.getElementById('insights-modal-risk');
+    if (riskDst) riskDst.innerHTML = buildHeatHealthCards(window.__lastZoneRecs || []);
+
+    const cityLabel = document.getElementById('insights-modal-city');
+    if (cityLabel && typeof currentCity !== 'undefined') cityLabel.textContent = cityDisplayName(currentCity);
+
+    document.getElementById('insights-modal')?.classList.add('open');
+  }); 
+  
+  document.getElementById('insights-modal-close')?.addEventListener('click', () =>
+    document.getElementById('insights-modal')?.classList.remove('open'));
+  document.getElementById('insights-modal')?.addEventListener('click', e => {
+    if (e.target.id === 'insights-modal') e.target.classList.remove('open');
+  });
   document.getElementById('download-report')?.addEventListener('click', downloadReport);
   document.getElementById('sim-close')?.addEventListener('click', () => document.getElementById('sim-modal').classList.remove('open'));
   document.getElementById('sim-modal')?.addEventListener('click', e => { if (e.target.id==='sim-modal') e.target.classList.remove('open'); });

@@ -385,7 +385,7 @@ input[type=range] { accent-color:var(--accent); }
 
 /* ==== MODAL ==== */
 .modal-overlay {
-  display:none; position:fixed; inset:0; z-index:200;
+  display:none; position:fixed; inset:0; z-index:2000; 
   background:rgba(0,0,0,0.7); backdrop-filter:blur(6px);
   align-items:center; justify-content:center; padding:20px;
 }

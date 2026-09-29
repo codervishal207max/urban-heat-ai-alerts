@@ -82,7 +82,7 @@ def generate_city_report(city: str, scenario: str = "green_cover", coverage: flo
     Every number in it comes from the same services that power the live
     dashboard/API, so the report never drifts from what's on screen.
     """
-    cfg = CITY_REGISTRY.get(city, CITY_REGISTRY[DEFAULT_CITY])
+    cfg = CITY_REGISTRY.get(city, CITY_REGISTRY.get("delhi") or next(iter(CITY_REGISTRY.values())))
     ss = _styles()
 
     zones = _generate_grid(city)

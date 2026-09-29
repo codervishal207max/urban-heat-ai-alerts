@@ -18,10 +18,10 @@ import json
 from backend.ml.paths import META_PATH, MODEL_PATH
 
 _model = None
-_meta = None
+_meta = None 
 _load_attempted = False
 _load_error = None
-
+ 
 
 def _load():
     global _model, _meta, _load_attempted, _load_error
@@ -68,3 +68,13 @@ def predict_lst(ndvi: float, population_density: float, urban_index: float,
         return None
     row = [[ndvi, population_density, urban_index, ambient_temp_c, heat_factor]]
     return round(float(_model.predict(row)[0]), 2)
+
+def predict_lst_batch(rows: list):
+    """Batch version — predicts all zones in ONE model call instead of looping.
+    rows: list of [ndvi, population_density, urban_index, ambient_temp_c, heat_factor]
+    Returns list of predicted LST floats, same order as rows, or None if model not loaded."""
+    _load()
+    if _model is None:
+        return None
+    preds = _model.predict(rows) 
+    return [round(float(p), 2) for p in preds] 

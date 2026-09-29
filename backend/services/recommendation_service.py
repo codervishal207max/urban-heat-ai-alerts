@@ -22,7 +22,7 @@ from __future__ import annotations
 from fastapi import HTTPException
 from backend.config import CITY_REGISTRY, SIM_SCENARIOS
 from backend.services.heat_service import _CITY_HEAT, _base_lst_for_city, _generate_grid
-from backend.services.ml_service import is_ready, predict_lst
+from backend.services.ml_service import is_ready, predict_lst, predict_lst_batch 
 from backend.services.risk_explainer_service import compute_hev_breakdown, get_public_safety_tips, detect_active_hazards
 from backend.utils.helpers import compute_hvi, risk_level_from_hvi
 
@@ -69,16 +69,25 @@ def _simulate_with_model(city: str, cfg: dict, sc: dict, scenario: str, coverage
     high_before = [z for z in zones if z["risk_level"] in ("High", "Very High")]
     pop_before = sum(z["population_density"] for z in high_before)
 
+        # Precompute new ndvi/urban for every zone first (fast, no model calls)
+    new_ndvi_list = []
+    new_urban_list = []
+    for z in zones:
+        ndvi_gain = min(0.85 - z["ndvi"], effect["ndvi_gain"] * fraction)
+        new_ndvi_list.append(round(z["ndvi"] + ndvi_gain, 3))
+        new_urban_list.append(round(z["urban_index"] * (1 - effect["urban_cut"] * fraction), 4))
+
+    # ONE batched model call for all zones instead of one-per-zone
+    rows = [[new_ndvi_list[i], zones[i]["population_density"], new_urban_list[i], base_lst, heat["hf"]]
+            for i in range(n)]
+    batch_preds = predict_lst_batch(rows)
+
     new_lsts = []
     pop_after = 0
     high_after_count = 0
-    for z in zones:
-        ndvi_gain = min(0.85 - z["ndvi"], effect["ndvi_gain"] * fraction)
-        new_ndvi = round(z["ndvi"] + ndvi_gain, 3)
-        new_urban = round(z["urban_index"] * (1 - effect["urban_cut"] * fraction), 4)
-
-        predicted = predict_lst(new_ndvi, z["population_density"], new_urban, base_lst, heat["hf"])
-        new_lst = predicted if predicted is not None else z["lst"]
+    for i, z in enumerate(zones):
+        new_ndvi = new_ndvi_list[i]
+        new_lst = batch_preds[i] if batch_preds is not None else z["lst"]
         new_lsts.append(new_lst)
 
         new_uhi = round(new_lst - (base_lst + 4), 2)
@@ -87,7 +96,7 @@ def _simulate_with_model(city: str, cfg: dict, sc: dict, scenario: str, coverage
         new_risk = risk_level_from_hvi(new_hvi)
         if new_risk in ("High", "Very High"):
             high_after_count += 1
-            pop_after += z["population_density"]
+            pop_after += z["population_density"] 
 
     new_avg = round(sum(new_lsts) / n, 2)
     lst_reduction = round(avg_lst - new_avg, 2)

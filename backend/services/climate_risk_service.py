@@ -23,16 +23,24 @@ _elev_cache: dict[str, dict] = {}
 
 def fetch_grid_rainfall(city_key: str, zones: list) -> list:
     """
-    Returns a list of 48h cumulative rainfall (mm), aligned index-for-index
-    with `zones`. One batched Open-Meteo call for the whole grid.
+    Returns 48h cumulative rainfall (mm) for every zone. Rainfall doesn't
+    vary meaningfully at intra-city block scale, so we fetch it for a SMALL
+    sample of points (max 10) instead of every zone — avoids the URL being
+    too long (414 error) for cities with hundreds of zones — and apply the
+    average to all zones.
     """
     now = time.time()
     cached = _rain_cache.get(city_key)
     if cached and (now - cached["fetched_at"]) < CACHE_TTL_SEC:
         return cached["values"]
 
-    lats = ",".join(str(z["lat"]) for z in zones)
-    lons = ",".join(str(z["lon"]) for z in zones)
+    # Sample at most 10 evenly-spaced zones instead of the whole grid
+    sample_size = min(10, len(zones))
+    step = max(1, len(zones) // sample_size)
+    sample_zones = zones[::step][:sample_size]
+
+    lats = ",".join(str(z["lat"]) for z in sample_zones)
+    lons = ",".join(str(z["lon"]) for z in sample_zones)
 
     try:
         resp = requests.get(
@@ -49,22 +57,21 @@ def fetch_grid_rainfall(city_key: str, zones: list) -> list:
         resp.raise_for_status()
         data = resp.json()
 
-        # Open-Meteo returns a list of per-point objects when multiple
-        # lat/lon are passed, a single object when only one is passed.
         points = data if isinstance(data, list) else [data]
-        values = []
+        sample_values = []
         for pt in points:
             daily_vals = pt.get("daily", {}).get("precipitation_sum", [])
             valid = [v for v in daily_vals if v is not None]
-            values.append(round(sum(valid), 2) if valid else 0.0)
+            sample_values.append(round(sum(valid), 2) if valid else 0.0)
 
-        if len(values) != len(zones):
-            return [0.0] * len(zones)
+        avg_rain = round(sum(sample_values) / len(sample_values), 2) if sample_values else 0.0
+        values = [avg_rain] * len(zones)
 
         _rain_cache[city_key] = {"values": values, "fetched_at": now}
         return values
-    except Exception:
-        return [0.0] * len(zones)
+    except Exception as e:
+        print(f"[RAIN API ERROR] city={city_key} error={type(e).__name__}: {e}")
+        return [0.0] * len(zones) 
 
 
 def fetch_grid_elevation(city_key: str, zones: list) -> list:
