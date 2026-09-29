@@ -16,7 +16,7 @@
     this.x = Math.random()*W; this.y = Math.random()*H;
     this.r = Math.random()*3+1;
     this.dx = (Math.random()-0.5)*0.4; this.dy = (Math.random()-0.5)*0.4;
-    this.alpha = Math.random()*0.5+0.2;
+    this.alpha = Math.random()*0.6+0.3;
   }
   for (let i=0;i<90;i++) particles.push(new Particle());
 
