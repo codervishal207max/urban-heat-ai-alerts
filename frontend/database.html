@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Urban Heat AI — Activity Database</title>
+  <title>Urban Heat AI — History</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -16,14 +16,13 @@
     <div class="nav-links">
       <a href="index.html">Home</a>
       <a href="dashboard.html">Dashboard</a>
-      <a href="database.html" class="active">Database</a>
+      <a href="database.html" class="active">History</a> 
     </div>
-    <span class="backend-status offline" id="backend-status">● Checking…</span>
   </nav>
 
   <div class="main-container">
     <div class="db-page-header">
-      <h1 class="db-title">🗄️ Activity Database</h1>
+      <h1 class="db-title">🗄️ History</h1> 
       <p class="db-subtitle">All user interactions, chatbot conversations, and alert events — logged in real-time by the frontend.</p>
       <div class="db-controls">
         <select id="db-filter" class="db-filter-select">
@@ -167,14 +166,14 @@
   }
 
   document.addEventListener('DOMContentLoaded',async ()=>{
-    logActivity('page_view','Viewed Activity Database','database.html'); // logs to backend + localStorage
+    logActivity('page_view','Viewed History','database.html');  // logs to backend + localStorage
     await renderTable('all'); await renderChats();
     document.getElementById('db-filter').addEventListener('change',async e=>{ await renderTable(e.target.value); });
     document.getElementById('db-clear-btn').addEventListener('click',async ()=>{
       if(confirm('Clear all activity and chat history? This clears the shared backend database for everyone using this server.')){
         try { await fetch(API_BASE + '/activity/clear', { method: 'DELETE' }); } catch(e) {}
         localStorage.removeItem('uhai_activity'); localStorage.removeItem('uhai_chat_history');
-        await renderTable('all'); await renderChats();
+        await renderTable('all'); await renderChats(); 
       }
     });
     document.getElementById('db-export-btn').addEventListener('click',exportCSV);
