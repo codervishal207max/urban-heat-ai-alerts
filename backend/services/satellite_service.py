@@ -8,7 +8,7 @@
 # than being purely modelled.
 #
 # POWER's daily endpoint has ~3-7 day latency (it isn't "right now" data),
-# so we request the last 10 days and use the most recent day that actually
+# so we request the Last 10 days and use the most recent day that actually
 # has a published value. Every one of the 10 cities gets this real anchor —
 # not just one — heat_service.py prefers it over the Open-Meteo live-air-
 # temp anchor when available, and falls back to Open-Meteo, then the
