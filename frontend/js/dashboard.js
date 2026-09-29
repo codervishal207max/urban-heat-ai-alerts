@@ -129,7 +129,10 @@ async function renderAlerts(city) {
   panel.innerHTML = '<div class="alert-loading">Loading alerts…</div>';
 
   const hotspotData = (typeof fetchHotspots === 'function') ? await fetchHotspots(city, 2.0) : null;
-  const hotspots = hotspotData && hotspotData.hotspots ? hotspotData.hotspots : null;
+  // UHI hotspots are relative (warmer than the city's own surroundings); an ALERT
+  // must also be hot in absolute terms, so keep only High/Very High risk zones.
+  const hotspots = hotspotData && hotspotData.hotspots
+    ? hotspotData.hotspots.filter(z => ['High', 'Very High'].includes(z.risk_level)) : null;
 
   if (!hotspots || !hotspots.length) {
     panel.innerHTML = '<div class="alert-loading">No active heat alerts for this city.</div>';
@@ -202,29 +205,53 @@ async function renderTodaySummary(city) {
 // ---- Recommendations — powers BOTH the "AI Insights" panel (rich HEV
 // breakdown cards) and the "Priority Zones" list (compact dot list), from
 // ONE backend call so there's no duplicate fetch. ----
-const HAZARD_ICON = { heat: '🔥', rain: '🌧️', landslide: '⛰️' };
-const HAZARD_COLOR = { heat: '#f97316', rain: '#38bdf8', landslide: '#eab308' };
+const HAZARD_ICON = {
+  heat: '🔥',
+  rain: '🌧️',
+  landslide: '⛰️',
+  none: '✅'
+};
+
+const HAZARD_COLOR = {
+  heat: '#f97316',
+  rain: '#38bdf8',
+  landslide: '#eab308',
+  none: '#22c55e'
+};
+
 const HEAT_HEALTH_BY_LEVEL = {
-  'Extreme':   { effect: 'High risk of heatstroke, organ stress and heat-related death — especially for children, elderly and outdoor workers.',
-                 action: 'Set up cooling centers & free water points, avoid outdoor work 11am–4pm, prioritize emergency health checks for vulnerable residents.' },
-  'Very High': { effect: 'Heat exhaustion, dehydration, dizziness and muscle cramps are common; elderly and children are especially vulnerable.',
-                 action: 'Increase shaded/green cover urgently, set up hydration points, issue community heat-warning alerts.' },
-  'High':      { effect: 'Fatigue and dehydration risk rises sharply; prolonged outdoor exposure becomes unsafe for vulnerable groups.',
-                 action: 'Plant trees / cool roofs in this zone, avoid strenuous activity at midday, encourage regular hydration.' },
-  'Moderate':  { effect: 'Mild heat discomfort possible for sensitive groups — children, elderly, outdoor workers.',
-                 action: 'Maintain existing green cover, monitor vulnerable residents, keep water accessible.' },
-  'Low':       { effect: 'No significant heat-related health risk currently in this zone.',
-                 action: 'Continue normal precautions and monitor changing conditions.' }
+  'Extreme': {
+    effect: 'High risk of heatstroke, organ stress and heat-related death — especially for children, elderly and outdoor workers.',
+    action: 'Set up cooling centers & free water points, avoid outdoor work 11am–4pm, prioritize emergency health checks for vulnerable residents.'
+  },
+  'Very High': {
+    effect: 'Heat exhaustion, dehydration, dizziness and muscle cramps are common; elderly and children are especially vulnerable.',
+    action: 'Increase shaded/green cover urgently, set up hydration points, issue community heat-warning alerts.'
+  },
+  'High': {
+    effect: 'Fatigue and dehydration risk rises sharply; prolonged outdoor exposure becomes unsafe for vulnerable groups.',
+    action: 'Plant trees / cool roofs in this zone, avoid strenuous activity at midday, encourage regular hydration.'
+  },
+  'Moderate': {
+    effect: 'Mild heat discomfort possible for sensitive groups — children, elderly, outdoor workers.',
+    action: 'Maintain existing green cover, monitor vulnerable residents, keep water accessible.'
+  },
+  'Low': {
+    effect: 'No significant heat-related health risk currently in this zone.',
+    action: 'Continue normal precautions and monitor changing conditions.'
+  }
 };
 
 function buildHeatHealthCards(zoneRecs) {
   if (!zoneRecs || !zoneRecs.length) {
     return '<div class="alert-loading">No zone risk data available right now.</div>';
   }
+
   return zoneRecs.slice(0, 5).map(z => {
     const level = z.risk_level || 'Low';
     const info = HEAT_HEALTH_BY_LEVEL[level] || HEAT_HEALTH_BY_LEVEL['Low'];
-    const color = HAZARD_COLOR['heat'] || '#f97316';
+    const color = HAZARD_COLOR.heat || '#f97316';
+
     return `<div class="insight-item">
       <div class="insight-icon" style="background:${color}22;color:${color}">🌡️</div>
       <div class="insight-body">
@@ -256,7 +283,7 @@ async function renderRecommendations(city) {
   // Priority Zones — compact list with a hazard-colored dot
   if (listEl) {
     listEl.innerHTML = zoneRecs.map((z, i) => {
-      const hazard = (z.active_hazards && z.active_hazards[0]) || 'heat';
+      const hazard = (z.active_hazards && z.active_hazards[0]) || 'none';
       const color = HAZARD_COLOR[hazard] || '#94a3b8';
       const action = (z.actions && z.actions[0]) || 'Monitor & maintain current green cover';
       return `<div class="rec-item">
@@ -365,423 +392,6 @@ async function renderVulnerability(city) {
     </div>`;
   }).join('');
 }
-
-
-// ============================================================
-// Healthcare Risk Advisory
-// Uses the same real city-level environmental + vulnerability
-// data already loaded by the dashboard.
-// ============================================================
-
-async function renderHealthcareAdvisory(city) {
-
-  const content = document.getElementById('healthcare-content');
-  const badge = document.getElementById('health-risk-badge');
-
-  if (!content || !badge) return;
-
-  content.innerHTML = `
-    <div class="healthcare-loading">
-      🔄 Analysing environmental health risk...
-    </div>
-  `;
-
-  // ----------------------------------------------------------
-  // Get the same heat-map features already loaded by map.js
-  // ----------------------------------------------------------
-
-  let feats = window.currentHeatFeatures;
-
-  if (!feats || !feats.length) {
-    const geojson =
-      (typeof fetchHeatMap === 'function')
-        ? await fetchHeatMap(city)
-        : null;
-
-    feats = geojson && geojson.features
-      ? geojson.features
-      : [];
-  }
-
-  if (!feats.length) {
-
-    badge.textContent = 'LOW';
-    badge.className = 'health-risk-badge low';
-
-    content.innerHTML = `
-      <div class="healthcare-loading">
-        📍 Select a city to generate healthcare advisory.
-      </div>
-    `;
-
-    return;
-  }
-
-  // ----------------------------------------------------------
-  // Environmental conditions
-  // ----------------------------------------------------------
-
-  const n = feats.length;
-
-  const avgLst =
-    feats.reduce(
-      (sum, f) => sum + (f.properties.lst || 0),
-      0
-    ) / n;
-
-  const maxLst = Math.max(
-    ...feats.map(f => f.properties.lst || 0)
-  );
-
-  const avgRain =
-    feats.reduce(
-      (sum, f) =>
-        sum + (f.properties.rainfall_48h_mm || 0),
-      0
-    ) / n;
-
-  const landslideActive =
-    feats.some(f =>
-      ['High', 'Moderate'].includes(
-        f.properties.landslide_risk_level
-      )
-    );
-
-  // ----------------------------------------------------------
-  // Heat risk
-  //
-  // NOTE:
-  // LST is satellite Land Surface Temperature.
-  // It is used here as an environmental heat-risk indicator,
-  // not as a direct measurement of human body temperature.
-  // ----------------------------------------------------------
-
-  let heatLevel = 'LOW';
-
-  if (avgLst >= 42) {
-    heatLevel = 'EXTREME';
-  } else if (avgLst >= 38) {
-    heatLevel = 'HIGH';
-  } else if (avgLst >= 35) {
-    heatLevel = 'MODERATE';
-  }
-
-  // ----------------------------------------------------------
-  // Rain risk
-  // Same threshold already used by renderTodaySummary()
-  // ----------------------------------------------------------
-
-  const heavyRain = avgRain >= 20;
-
-  // ----------------------------------------------------------
-  // Overall environmental health risk
-  // ----------------------------------------------------------
-
-  let overallRisk = 'LOW';
-
-  if (heatLevel === 'EXTREME') {
-    overallRisk = 'EXTREME';
-  } else if (
-    heatLevel === 'HIGH' ||
-    heavyRain ||
-    landslideActive
-  ) {
-    overallRisk = 'HIGH';
-  } else if (heatLevel === 'MODERATE') {
-    overallRisk = 'MODERATE';
-  }
-
-  // ----------------------------------------------------------
-  // Badge
-  // ----------------------------------------------------------
-
-  badge.textContent = overallRisk;
-  badge.className =
-    'health-risk-badge ' + overallRisk.toLowerCase();
-
-  // ----------------------------------------------------------
-  // Active hazards
-  // ----------------------------------------------------------
-
-  const hazards = [];
-
-  if (heatLevel !== 'LOW') {
-    hazards.push({
-      icon:
-        heatLevel === 'EXTREME'
-          ? '🔥'
-          : '🌡️',
-
-      title:
-        heatLevel === 'EXTREME'
-          ? 'Extreme heat conditions'
-          : heatLevel === 'HIGH'
-            ? 'High heat conditions'
-            : 'Elevated heat conditions',
-
-      detail:
-        `Avg LST ${avgLst.toFixed(1)}°C`
-    });
-  }
-
-  if (heavyRain) {
-    hazards.push({
-      icon: '🌧️',
-      title: 'Heavy rainfall conditions',
-      detail: `${avgRain.toFixed(1)} mm rainfall / 48h`
-    });
-  }
-
-  if (landslideActive) {
-    hazards.push({
-      icon: '⛰️',
-      title: 'Landslide risk zones active',
-      detail: 'Moderate/High risk areas detected'
-    });
-  }
-
-  // ----------------------------------------------------------
-  // Potential health impacts
-  // ----------------------------------------------------------
-
-  const impacts = [];
-
-  if (heatLevel === 'EXTREME' || heatLevel === 'HIGH') {
-    impacts.push(
-      'Dizziness or light-headedness',
-      'Fatigue and weakness',
-      'Dehydration',
-      'Heat exhaustion'
-    );
-  } else if (heatLevel === 'MODERATE') {
-    impacts.push(
-      'Fatigue during prolonged heat exposure',
-      'Dehydration risk'
-    );
-  }
-
-  if (heavyRain) {
-    impacts.push(
-      'Mobility and water-exposure hazards'
-    );
-  }
-
-  if (landslideActive) {
-    impacts.push(
-      'Injury risk near unstable slopes'
-    );
-  }
-
-  if (!impacts.length) {
-    impacts.push(
-      'No major environmental health hazard detected'
-    );
-  }
-
-  // ----------------------------------------------------------
-  // Recommendations
-  // ----------------------------------------------------------
-
-  const recommendations = [];
-
-  if (heatLevel === 'EXTREME' || heatLevel === 'HIGH') {
-
-    recommendations.push(
-      'Drink water frequently and maintain hydration.',
-      'Avoid prolonged outdoor exposure during peak heat.',
-      'Use shaded or cool areas whenever possible.',
-      'Monitor children, elderly people and outdoor workers.'
-    );
-
-  } else if (heatLevel === 'MODERATE') {
-
-    recommendations.push(
-      'Stay hydrated during outdoor activities.',
-      'Take breaks from prolonged heat exposure.'
-    );
-  }
-
-  if (heavyRain) {
-
-    recommendations.push(
-      'Avoid flooded roads and waterlogged areas.',
-      'Follow local weather and emergency advisories.'
-    );
-  }
-
-  if (landslideActive) {
-
-    recommendations.push(
-      'Avoid unstable slopes and landslide-prone areas.',
-      'Follow local evacuation or emergency instructions.'
-    );
-  }
-
-  if (!recommendations.length) {
-
-    recommendations.push(
-      'Continue normal precautions and monitor changing conditions.'
-    );
-  }
-
-  // ----------------------------------------------------------
-  // Population vulnerability
-  // Uses the existing backend endpoint already used by
-  // renderVulnerability().
-  // ----------------------------------------------------------
-
-  let vulnerabilityText = 'Data unavailable';
-
-  try {
-
-    const vulnData =
-      (typeof fetchVulnerablePopulations === 'function')
-        ? await fetchVulnerablePopulations(city)
-        : null;
-
-    const demo =
-      vulnData && vulnData.demographics;
-
-    if (demo) {
-
-      const vulnerablePopulation =
-        (demo.elderly_65_plus || 0) +
-        (demo.children_under_5 || 0) +
-        (demo.outdoor_workers || 0) +
-        (demo.low_income_households || 0);
-
-      if (vulnerablePopulation > 0) {
-
-        vulnerabilityText =
-          vulnerablePopulation.toLocaleString('en-IN');
-      }
-    }
-
-  } catch (error) {
-
-    console.warn(
-      'Healthcare vulnerability data unavailable:',
-      error
-    );
-  }
-
-  // ----------------------------------------------------------
-  // Render
-  // ----------------------------------------------------------
-
-  content.innerHTML = `
-
-    <div class="healthcare-section">
-
-      <div class="healthcare-section-title">
-        Current Conditions
-      </div>
-
-      <div class="healthcare-data-row">
-        <span>🌡️ Avg LST</span>
-        <span class="healthcare-data-value">
-          ${avgLst.toFixed(1)}°C
-        </span>
-      </div>
-
-      <div class="healthcare-data-row">
-        <span>🔥 Max LST</span>
-        <span class="healthcare-data-value">
-          ${maxLst.toFixed(1)}°C
-        </span>
-      </div>
-
-      <div class="healthcare-data-row">
-        <span>🌧️ Rainfall</span>
-        <span class="healthcare-data-value">
-          ${avgRain.toFixed(1)} mm
-        </span>
-      </div>
-
-      <div class="healthcare-data-row">
-        <span>👥 Vulnerable Population</span>
-        <span class="healthcare-data-value">
-          ${vulnerabilityText}
-        </span>
-      </div>
-
-    </div>
-
-
-    <div class="healthcare-section">
-
-      <div class="healthcare-section-title">
-        Active Environmental Risks
-      </div>
-
-      ${
-        hazards.length
-          ? hazards.map(h => `
-              <div class="healthcare-hazard">
-                <span class="healthcare-hazard-icon">
-                  ${h.icon}
-                </span>
-
-                <div class="healthcare-hazard-text">
-                  <b>${h.title}</b><br>
-                  ${h.detail}
-                </div>
-              </div>
-            `).join('')
-          : `
-            <div class="healthcare-hazard"
-                 style="border-left-color:#22c55e;">
-              <span class="healthcare-hazard-icon">✅</span>
-              <div class="healthcare-hazard-text">
-                No significant environmental hazard detected.
-              </div>
-            </div>
-          `
-      }
-
-    </div>
-
-
-    <div class="healthcare-section">
-
-      <div class="healthcare-section-title">
-        Potential Health Impacts
-      </div>
-
-      <div class="healthcare-impact">
-        ${impacts.map(i => `• ${i}`).join('<br>')}
-      </div>
-
-    </div>
-
-
-    <div class="healthcare-section">
-
-      <div class="healthcare-section-title">
-        Recommended Actions
-      </div>
-
-      ${
-        recommendations
-          .map(r => `
-            <div class="healthcare-recommendation">
-              ${r}
-            </div>
-          `)
-          .join('')
-      }
-
-    </div>
-  `;
-
-  logActivity(
-    'healthcare_advisory',
-    'Healthcare advisory generated for ' +
-      cityDisplayName(city),
-    overallRisk
-  );
-}
-
 
 // ---- Charts ----
 async function initCharts(city) {
@@ -936,7 +546,6 @@ async function switchCityDashboard(city) {
     renderRecommendations(city),
     renderLandStats(city),
     renderVulnerability(city),
-    renderHealthcareAdvisory(city),
     initCharts(city),
   ]);
 
@@ -1006,7 +615,7 @@ function initCitySearch() {
 }
 
 // ---- Init ----
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const urlCity = new URLSearchParams(window.location.search).get('city');
   // A URL-provided city still requires going through the normal search+select
   // flow's data loading path (selectCity below) rather than silently
@@ -1071,7 +680,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const input = document.getElementById('city-search-input');
     if (input) input.value = restored.name;
-    selectCity(restored.key);
+    // Backend keeps searched cities in memory only — a restart/auto-reload wipes
+    // them. Re-register so the restored city exists server-side (else 404s).
+    const reg = (typeof registerCity === 'function') ? await registerCity(restored.name, restored.lat, restored.lon) : null;
+    selectCity((reg && reg.city_key) || restored.key);
   } else {
     showEmptyState();
   }

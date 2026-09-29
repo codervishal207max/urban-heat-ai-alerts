@@ -100,16 +100,14 @@ function buildClientGrid(cityKey) {
       const slopeDeg = Math.max(0, urban < 0.3 ? (1-urban)*30 : 5);
       const landslideScore = Math.min(1, 0.5*(rainfall/100) + 0.3*(slopeDeg/45) + 0.2*(1-ndvi));
       const landslideLevel = landslideScore>0.7?'High':landslideScore>0.4?'Moderate':'Low';
-      const liveTempC = (cfg.baseLST + (Math.sin(id * 1.7) * 1.7) + urban * 8.5 + (lst - cfg.baseLST) * 0.3).toFixed(2);
 
       features.push({
         type:'Feature',
         properties:{ cell_id:id, lst:+lst.toFixed(2), ndvi:+ndvi.toFixed(3), urban_index:+urban.toFixed(4),
           uhi_intensity:uhi, population_density:pop, hvi:+hvi.toFixed(3), risk_level:risk,
-          live_temp_c:+liveTempC,
           rainfall_48h_mm:+rainfall.toFixed(1), slope_deg:+slopeDeg.toFixed(1),
           landslide_risk_score:+landslideScore.toFixed(3), landslide_risk_level:landslideLevel },
-        geometry:{ type:'Polygon', coordinates:[[ 
+        geometry:{ type:'Polygon', coordinates:[[
           [lon-0.008,lat-0.005],[lon+0.008,lat-0.005],
           [lon+0.008,lat+0.005],[lon-0.008,lat+0.005],[lon-0.008,lat-0.005]
         ]]}
@@ -122,10 +120,8 @@ function buildClientGrid(cityKey) {
 
 function popupHTML(p) {
   const rc = riskColor(p.risk_level);
-  const liveTemp = p.live_temp_c ?? p.lst;
   return `<div style="font:0.84rem 'Segoe UI',sans-serif;min-width:155px;color:#e2e8f0">
     <b style="color:#fb923c">📍 Zone ${p.cell_id}</b><br>
-    🌡️ Live Temp: <b>${Number(liveTemp).toFixed(1)}°C</b><br>
     🌡️ LST: <b>${p.lst}°C</b><br>
     🌿 NDVI: ${p.ndvi}<br>
     🔥 UHI: +${Math.max(0,p.uhi_intensity).toFixed(1)}°C<br>
@@ -218,36 +214,36 @@ async function loadLayers(cityKey) {
     console.warn('Heat blend layer failed, falling back to grid:', e);
     mapLayers.heat = L.geoJSON({ type:'FeatureCollection', features: feats }, {
       style: f => ({ fillColor:heatColor(f.properties.lst), weight:0.3, color:'#333', fillOpacity:0.68 }),
-      onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
+      onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
     }).addTo(map);
   }
 
   mapLayers.health = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:riskColor(f.properties.risk_level), weight:0.3, color:'#333', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
   });
 
   mapLayers.ndvi = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:ndviColor(f.properties.ndvi), weight:0.3, color:'#333', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
   });
 
   const hs = feats.filter(f => (f.properties.uhi_intensity||0) >= 2.0);
   mapLayers.hotspots = L.geoJSON({ type:'FeatureCollection', features: hs }, {
     style: () => ({ fillColor:'#dc2626', weight:1.5, color:'#7f1d1d', fillOpacity:0.85 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
   });
 
   // NEW — rain layer (48h cumulative rainfall per zone)
   mapLayers.rain = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:rainColor(f.properties.rainfall_48h_mm||0), weight:0.3, color:'#1e3a8a', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
   });
 
   // NEW — landslide risk layer
   mapLayers.landslide = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:landslideColor(f.properties.landslide_risk_level||'Low'), weight:0.3, color:'#333', fillOpacity:0.68 }),
-    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties), { className: 'heat-zone-popup' })
+    onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties))
   });
 
   // NEW — land use layer (real urban_index/ndvi classification per zone,
@@ -255,13 +251,36 @@ async function loadLayers(cityKey) {
   mapLayers.landuse = L.geoJSON({ type:'FeatureCollection', features: feats }, {
     style: f => ({ fillColor:landUseColor(f.properties), weight:0.3, color:'#333', fillOpacity:0.68 }),
     onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties) +
-      `<div style="margin-top:4px;color:#e2e8f0">🗺️ Land use: <b>${landUseLabel(f.properties)}</b></div>`, { className: 'heat-zone-popup' })
+      `<div style="margin-top:4px;color:#e2e8f0">🗺️ Land use: <b>${landUseLabel(f.properties)}</b></div>`)
   });
 
+<<<<<<< HEAD
   // Zone label badges were intentionally removed to avoid noisy map clutter.
   // The grid and risk polygons remain active; only the text overlay for
   // individual zones is disabled.
   mapLayers.zoneLabels = null;
+=======
+  // Zone-wise labeled pins — top 5 highest-LST zones get a visible marker
+  // with risk level + temperature (matching the reference design's
+  // "High Risk Zone (48.7°C)" pins), always shown on top of whichever grid
+  // layers are active. Real per-zone data, not decorative.
+  const topZones = [...feats].sort((a, b) => (b.properties.lst||0) - (a.properties.lst||0)).slice(0, 5);
+  mapLayers.zoneLabels = L.layerGroup(topZones.map(f => {
+    const [lon, lat] = centroidOf(f.geometry);
+    const p = f.properties;
+    const rc = riskColor(p.risk_level);
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="background:${rc};color:#0a0e16;font:700 0.68rem 'Segoe UI',sans-serif;
+                          padding:4px 9px;border-radius:20px;white-space:nowrap;
+                          box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;gap:4px;">
+               ${['High','Very High'].includes(p.risk_level) ? '⚠️' : '📍'} ${p.risk_level} — Zone ${p.cell_id} (${p.lst}°C)
+             </div>`,
+      iconSize: null, iconAnchor: [10, 10],
+    });
+    return L.marker([lat, lon], { icon }).bindPopup(popupHTML(p));
+  })).addTo(map);
+>>>>>>> fb802cf (Update the some dashboard file.)
 
   const heatCb = document.getElementById('layer-heat');
   if (heatCb && !heatCb.checked) map.removeLayer(mapLayers.heat);

@@ -22,6 +22,13 @@ def _clamp01(x: float) -> float:
     return max(0.0, min(1.0, x))
 
 
+def _hazard_label(hazard_type: str, lst: float) -> str:
+    if hazard_type == "heat":
+        return "Extreme heat" if lst >= 44 else "High heat" if lst >= 40 else "Elevated heat"
+    return {"rain": "Heavy rainfall", "landslide": "Landslide-prone terrain",
+            "none": "No significant hazard"}.get(hazard_type, "Hazard")
+
+
 def compute_hev_breakdown(zone: dict) -> dict:
     """
     Decomposes a zone's risk into Hazard / Exposure / Vulnerability, each
@@ -35,7 +42,9 @@ def compute_hev_breakdown(zone: dict) -> dict:
     read at a glance instead of reverse-engineering from one number.
     """
     # --- Hazard: worst of the three live hazard types for this zone ---
-    heat_hazard = _clamp01(zone.get("uhi_intensity", 0) / 8.0)
+    # Absolute, not relative: 30C -> 0, 46C -> 1. (Old version used UHI vs the
+    # city's own baseline, so a 23C zone in a cool city scored as "extreme".)
+    heat_hazard = _clamp01((zone.get("lst", 0) - 30.0) / 16.0)
     rain_hazard = _clamp01(zone.get("rainfall_48h_mm", 0) / 100.0)
     landslide_hazard = _clamp01(zone.get("landslide_risk_score", 0))
 
@@ -45,6 +54,11 @@ def compute_hev_breakdown(zone: dict) -> dict:
         ("landslide", landslide_hazard, f"{zone.get('slope_deg', 0)}° slope with {zone.get('rainfall_48h_mm', 0)} mm recent rainfall"),
     ]
     hazard_type, hazard_score, hazard_detail = max(hazard_candidates, key=lambda c: c[1])
+    if hazard_score < 0.15:
+        # Nothing is actually hazardous here — say so instead of naming the
+        # least-bad of three harmless readings as "the hazard".
+        hazard_type = "none"
+        hazard_detail = f"LST {zone.get('lst')}°C, {zone.get('rainfall_48h_mm', 0)} mm rain — all within normal range"
 
     # --- Exposure: how many people are in the path of that hazard ---
     pop = zone.get("population_density", 0)
@@ -67,7 +81,7 @@ def compute_hev_breakdown(zone: dict) -> dict:
         "hazard": {
             "score": round(hazard_score, 3),
             "type": hazard_type,
-            "label": {"heat": "Extreme heat", "rain": "Heavy rainfall", "landslide": "Landslide-prone terrain"}[hazard_type],
+            "label": _hazard_label(hazard_type, zone.get("lst", 0)),
             "detail": hazard_detail,
         },
         "exposure": {
@@ -111,7 +125,7 @@ _LANDSLIDE_TIPS = [
 def detect_active_hazards(zone: dict) -> list[str]:
     """Which hazard types are currently active for this zone, by simple thresholds."""
     active = []
-    if zone.get("lst", 0) > 36 or zone.get("uhi_intensity", 0) > 2:
+    if zone.get("lst", 0) >= 36:  # absolute temperature, not "warmer than neighbours"
         active.append("heat")
     if zone.get("landslide_risk_level") in ("Moderate", "High"):
         active.append("landslide")

@@ -21,8 +21,13 @@ from __future__ import annotations
 
 from fastapi import HTTPException
 from backend.config import CITY_REGISTRY, SIM_SCENARIOS
-from backend.services.heat_service import _CITY_HEAT, _base_lst_for_city, _generate_grid
-from backend.services.ml_service import is_ready, predict_lst, predict_lst_batch 
+from backend.services.heat_service import (
+    _CITY_HEAT,
+    _base_lst_for_city,
+    _generate_grid,
+    cap_risk_by_absolute_lst
+)
+from backend.services.ml_service import is_ready, predict_lst, predict_lst_batch
 from backend.services.risk_explainer_service import compute_hev_breakdown, get_public_safety_tips, detect_active_hazards
 from backend.utils.helpers import compute_hvi, risk_level_from_hvi
 
@@ -93,10 +98,10 @@ def _simulate_with_model(city: str, cfg: dict, sc: dict, scenario: str, coverage
         new_uhi = round(new_lst - (base_lst + 4), 2)
         new_hvi = compute_hvi(new_lst, new_ndvi, z["population_density"], new_uhi,
                                base_lst=base_lst, hf=heat["hf"])
-        new_risk = risk_level_from_hvi(new_hvi)
+        new_risk = cap_risk_by_absolute_lst(risk_level_from_hvi(new_hvi), new_lst)
         if new_risk in ("High", "Very High"):
             high_after_count += 1
-            pop_after += z["population_density"] 
+            pop_after += z["population_density"]
 
     new_avg = round(sum(new_lsts) / n, 2)
     lst_reduction = round(avg_lst - new_avg, 2)

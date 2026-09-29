@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple
 import math, random, time
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import HTTPException
-from backend.config import CITY_REGISTRY, GRID_ROWS, GRID_COLS, LAT_STEP, LON_STEP
+from backend.config import CITY_REGISTRY, GRID_ROWS, GRID_COLS, LAT_STEP, LON_STEP, HEAT_THRESHOLDS
 from backend.utils.helpers import seeded_noise, compute_hvi, risk_level_from_hvi
 from backend.services.weather_service import fetch_live_weather
 from backend.services.satellite_service import fetch_real_lst
@@ -83,26 +83,7 @@ def get_calibration_info(city: str) -> dict:
     """Public helper for the API layer to expose live-vs-static data source status."""
     heat = _CITY_HEAT.get(city, {"base": 32, "hf": 8})
     _, meta = _base_lst_for_city(city, heat)
-    live = fetch_live_weather(city)
-    if live:
-        meta["city_temp_c"] = live.get("temp_c")
-        meta["city_daily_max_c"] = live.get("daily_max_c")
     return {"city": city, **meta}
-
-
-def _compute_zone_live_temp(city: str, zone: dict) -> float:
-    """Estimate a live temperature for each local area using the city's real time weather and local urban intensity."""
-    live = fetch_live_weather(city)
-    city_temp = None
-    if live:
-        city_temp = live.get("temp_c") if live.get("temp_c") is not None else live.get("daily_max_c")
-    heat = _CITY_HEAT.get(city, {"base": 32, "hf": 8})
-    base_lst, _ = _base_lst_for_city(city, heat)
-    ambient = city_temp if city_temp is not None else max(22.0, base_lst - 5.0)
-    urban_boost = (zone.get("urban_index", 0) * heat["hf"] * 1.1)
-    local_adjustment = (zone.get("lst", base_lst) - base_lst) * 0.35
-    live_temp = ambient + urban_boost + local_adjustment
-    return round(float(live_temp), 2)
 
 
 def _generate_grid(city: str) -> List[Dict]:
@@ -126,6 +107,31 @@ def _generate_grid(city: str) -> List[Dict]:
 
 _grid_cache: dict = {}
 GRID_CACHE_TTL_SEC = 180  # 3 min — long enough to cover one dashboard load's several calls
+
+
+_RISK_ORDER = ["Very Low", "Low", "Moderate", "High", "Very High"]
+
+
+def cap_risk_by_absolute_lst(risk: str, lst: float) -> str:
+    """
+    HVI is normalised against each city's OWN baseline, so on its own it
+    labels the hottest zones of ANY city "Very High" — even a 23C zone in
+    Kashmir. This puts an ABSOLUTE ceiling on the label from the real
+    temperature (thresholds from config.HEAT_THRESHOLDS), so a cool city
+    can't show "High/Extreme" risk just because one zone is warmer than
+    its neighbours. Relative ranking (which zone is worst) is unchanged.
+    """
+    if lst < HEAT_THRESHOLDS["low"]:
+        ceiling = "Low"
+    elif lst < HEAT_THRESHOLDS["moderate"]:
+        ceiling = "Moderate"
+    elif lst < HEAT_THRESHOLDS["high"]:
+        ceiling = "High"
+    else:
+        ceiling = "Very High"
+    if risk not in _RISK_ORDER:
+        return risk
+    return risk if _RISK_ORDER.index(risk) <= _RISK_ORDER.index(ceiling) else ceiling
 
 
 def _urban_cores(seed: int) -> list:
@@ -181,12 +187,7 @@ def _generate_grid_uncached(city: str) -> List[Dict]:
             pop   = int(2000 + 26000 * urban * 0.7)
             uhi   = round(lst - (base_lst + 4), 2)
             hvi   = compute_hvi(lst, ndvi, pop, uhi, base_lst=base_lst, hf=heat["hf"])
-            risk  = risk_level_from_hvi(hvi)
-            zone_live_temp = _compute_zone_live_temp(city, {
-                "lst": lst,
-                "urban_index": urban,
-                "base_lst": base_lst,
-            })
+            risk  = cap_risk_by_absolute_lst(risk_level_from_hvi(hvi), lst)
             zones.append({
                 "cell_id": i * GRID_COLS + j,
                 "lat": round(lat, 5), "lon": round(lon, 5),
@@ -194,7 +195,6 @@ def _generate_grid_uncached(city: str) -> List[Dict]:
                 "uhi_intensity": uhi, "population_density": pop,
                 "hvi": hvi, "risk_level": risk,
                 "urban_index": round(urban, 4),
-                "live_temp_c": zone_live_temp,
             })
 
     # Batch-fetch rainfall + elevation for the whole grid — run CONCURRENTLY
