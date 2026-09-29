@@ -413,7 +413,7 @@ input[type=range] { accent-color:var(--accent); }
 
 /* ==== CHATBOT ==== */
 .chatbot-fab {
-  position:fixed; bottom:28px; right:28px; z-index:150;
+  position:fixed; bottom:28px; right:28px; z-index:2100; 
   background:linear-gradient(135deg,var(--accent),#ef4444); border:none; border-radius:30px; padding:13px 20px;
   display:flex; align-items:center; gap:8px; cursor:pointer; color:#fff;
   font-weight:700; font-size:0.92rem; box-shadow:0 10px 32px rgba(249,115,22,0.5);
@@ -422,7 +422,7 @@ input[type=range] { accent-color:var(--accent); }
 .chatbot-fab:hover { transform:translateY(-3px) scale(1.03); box-shadow:0 14px 38px rgba(249,115,22,0.6); }
 .chatbot-fab-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; display:none; box-shadow:0 0 0 3px rgba(34,197,94,0.3); }
 .chatbot-panel {
-  position:fixed; bottom:94px; right:28px; z-index:149; width:400px;
+  position:fixed; bottom:94px; right:28px; z-index:2099; width:400px; 
   background:var(--bg2); border:1px solid var(--border); border-radius:18px;
   display:none; flex-direction:column; box-shadow:0 24px 60px rgba(0,0,0,0.45); overflow:hidden; max-height:620px;
 }
