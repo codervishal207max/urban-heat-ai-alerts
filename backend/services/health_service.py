@@ -22,7 +22,10 @@ def get_vulnerable_populations(city: str) -> dict:
     cfg   = CITY_REGISTRY.get(city, CITY_REGISTRY["delhi"])
     zones = _generate_grid(city)
     high  = [z for z in zones if z["risk_level"] in ("High", "Very High")]
-    pop_at_risk = sum(z["population_density"] for z in high)
+    grid_population = sum(z["population_density"] for z in zones)
+    high_risk_population = sum(z["population_density"] for z in high)
+    risk_share = high_risk_population / grid_population if grid_population else 0
+    pop_at_risk = round(cfg["population"] * risk_share)
     # Demographic model
     return {
         "city": cfg["name"],
@@ -32,6 +35,7 @@ def get_vulnerable_populations(city: str) -> dict:
         "estimated_hospitalizations":  int(pop_at_risk * 0.0003),
         "demographics": {
             "elderly_65_plus": int(pop_at_risk * 0.18),
+            "children_0_14": int(pop_at_risk * 0.26),
             "children_under_5": int(pop_at_risk * 0.12),
             "outdoor_workers": int(pop_at_risk * 0.28),
             "low_income_households": int(pop_at_risk * 0.35),

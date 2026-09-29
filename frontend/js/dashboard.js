@@ -338,10 +338,10 @@ async function renderVulnerability(city) {
     return;
   }
 
-  const total = (demo.elderly_65_plus || 0) + (demo.children_under_5 || 0) +
-                (demo.outdoor_workers || 0) + (demo.low_income_households || 0) || 1;
+  const children = demo.children_0_14 ?? demo.children_under_5 ?? 0;
+  const total = data.population_at_high_risk || 1;
   const rows = [
-    { label: 'Children (0–14)', val: demo.children_under_5 || 0, color: '#f97316' },
+    { label: 'Children (0–14)', val: children, color: '#f97316' },
     { label: 'Elderly (65+)', val: demo.elderly_65_plus || 0, color: '#dc2626' },
     { label: 'Outdoor Workers', val: demo.outdoor_workers || 0, color: '#38bdf8' },
     { label: 'Low-income Households', val: demo.low_income_households || 0, color: '#eab308' },

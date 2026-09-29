@@ -64,3 +64,36 @@ Land surface temp 32.04C | Vulnerability index 0.8
 ~16,667 people at risk in this zone, incl. 3,000 elderly (65+), 2,000 children under 5 and 4,666 outdoor workers.
 Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
 
+--- [2026-09-29 21:49:23] MOCK sms -> +91-98765-43210 (demo) ---
+[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Nagpur City
+ज़ोन #370: तापमान 34.43°C
+दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
+---
+[DEMO] HEAT ALERT (EXTREME) - Nagpur City
+Zone #370 near 21.11681N, 78.99956E
+Land surface temp 34.43C | Vulnerability index 0.888
+~18,546 people at risk in this zone, incl. 3,338 elderly (65+), 2,225 children under 5 and 5,192 outdoor workers.
+Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
+
+--- [2026-09-29 21:49:23] MOCK whatsapp -> +91-98765-43210 (demo) ---
+[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Nagpur City
+ज़ोन #370: तापमान 34.43°C
+दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
+---
+[DEMO] HEAT ALERT (EXTREME) - Nagpur City
+Zone #370 near 21.11681N, 78.99956E
+Land surface temp 34.43C | Vulnerability index 0.888
+~18,546 people at risk in this zone, incl. 3,338 elderly (65+), 2,225 children under 5 and 5,192 outdoor workers.
+Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
+
+--- [2026-09-29 21:49:23] MOCK email -> heat-response-cell@municipal.gov.in ---
+[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Nagpur City
+ज़ोन #370: तापमान 34.43°C
+दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
+---
+[DEMO] HEAT ALERT (EXTREME) - Nagpur City
+Zone #370 near 21.11681N, 78.99956E
+Land surface temp 34.43C | Vulnerability index 0.888
+~18,546 people at risk in this zone, incl. 3,338 elderly (65+), 2,225 children under 5 and 5,192 outdoor workers.
+Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
+
