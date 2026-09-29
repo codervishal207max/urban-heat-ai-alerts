@@ -81,7 +81,7 @@ body {
 }
 .hero h1 {
   font-size:clamp(2.4rem,6vw,4rem); font-weight:800; margin-bottom:20px;
-  background:linear-gradient(135deg,#fff 30%,var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background:linear-gradient(135deg,#fff 30%,var(--accent)); background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
 }
 .hero-subtitle { font-size:1.08rem; color:var(--text2); max-width:650px; margin:0 auto 40px; line-height:1.75; }
 .hero-stats { display:flex; gap:20px; justify-content:center; flex-wrap:wrap; margin-bottom:40px; }
@@ -556,7 +556,6 @@ input[type=range] { accent-color:var(--accent); }
 .db-chat-session-time { font-size:0.72rem; color:var(--text2); margin-bottom:10px; }
 .db-chat-bubble { display:flex; gap:10px; margin-bottom:8px; font-size:0.82rem; }
 .db-chat-user .db-chat-bubble > span:first-child { flex-shrink:0; }
-.db-chat-bot  { }
 
 /* Responsive */
 @media (max-width:768px) {

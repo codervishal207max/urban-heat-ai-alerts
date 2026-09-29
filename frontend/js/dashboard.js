@@ -338,17 +338,27 @@ async function renderVulnerability(city) {
     return;
   }
 
-  const total = (demo.elderly_65_plus || 0) + (demo.children_under_5 || 0) +
-                (demo.outdoor_workers || 0) + (demo.low_income_households || 0) || 1;
+  const children = demo.children_0_14 ?? demo.children_under_5 ?? 0;
   const rows = [
-    { label: 'Children (0–14)', val: demo.children_under_5 || 0, color: '#f97316' },
+    { label: 'Children (0–14)', val: children, color: '#f97316' },
     { label: 'Elderly (65+)', val: demo.elderly_65_plus || 0, color: '#dc2626' },
     { label: 'Outdoor Workers', val: demo.outdoor_workers || 0, color: '#38bdf8' },
     { label: 'Low-income Households', val: demo.low_income_households || 0, color: '#eab308' },
   ];
+  const total = rows.reduce((sum, row) => sum + row.val, 0);
+  const exactPercentages = rows.map(row => total ? (row.val / total) * 100 : 0);
+  const percentages = exactPercentages.map(Math.floor);
+  let remainingPoints = total ? 100 - percentages.reduce((sum, pct) => sum + pct, 0) : 0;
+  const remainderOrder = exactPercentages
+    .map((pct, index) => ({ index, remainder: pct - Math.floor(pct) }))
+    .sort((a, b) => b.remainder - a.remainder);
 
-  el.innerHTML = rows.map(r => {
-    const pct = Math.round((r.val / total) * 100);
+  for (let i = 0; i < remainingPoints; i++) {
+    percentages[remainderOrder[i].index] += 1;
+  }
+
+  el.innerHTML = rows.map((r, index) => {
+    const pct = percentages[index];
     return `<div class="vuln-bar-row">
       <div class="vuln-label"><span>${r.label}</span><span>${r.val.toLocaleString('en-IN')} (${pct}%)</span></div>
       <div class="vuln-track"><div class="vuln-fill" style="width:${pct}%;background:${r.color}"></div></div>
