@@ -1,503 +1,66 @@
-<<<<<<< HEAD
---- [2026-09-20 08:59:04] MOCK sms -> +91-98765-43210 (demo) ---
+--- [2026-09-29 18:13:02] MOCK sms -> +91-98765-43210 (demo) ---
 [DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #466: तापमान 38.78°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
---- [2026-09-27 15:54:00] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #466: तापमान 37.76°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #466 near 28.61N, 77.2265E
-Land surface temp 37.76C | Vulnerability index 0.84
-~17,717 people at risk in this zone, incl. 3,189 elderly (65+), 2,126 children under 5 and 4,960 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-27 15:54:00] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #466: तापमान 37.76°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #466 near 28.61N, 77.2265E
-Land surface temp 37.76C | Vulnerability index 0.84
-~17,717 people at risk in this zone, incl. 3,189 elderly (65+), 2,126 children under 5 and 4,960 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-27 15:54:00] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #466: तापमान 37.76°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #466 near 28.61N, 77.2265E
-Land surface temp 37.76C | Vulnerability index 0.84
-~17,717 people at risk in this zone, incl. 3,189 elderly (65+), 2,126 children under 5 and 4,960 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-27 15:54:00] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #465: तापमान 37.42°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #465 near 28.61N, 77.21E
-Land surface temp 37.42C | Vulnerability index 0.807
-~20,200 people at risk in this zone, incl. 3,636 elderly (65+), 2,424 children under 5 and 5,656 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-27 15:54:00] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #465: तापमान 37.42°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #465 near 28.61N, 77.21E
-Land surface temp 37.42C | Vulnerability index 0.807
-~20,200 people at risk in this zone, incl. 3,636 elderly (65+), 2,424 children under 5 and 5,656 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-27 15:54:00] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #465: तापमान 37.42°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #465 near 28.61N, 77.21E
-Land surface temp 37.42C | Vulnerability index 0.807
-~20,200 people at risk in this zone, incl. 3,636 elderly (65+), 2,424 children under 5 and 5,656 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 12:38:12] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #466: तापमान 37.31°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #466 near 28.61N, 77.2265E
-Land surface temp 37.31C | Vulnerability index 0.84
-~17,717 people at risk in this zone, incl. 3,189 elderly (65+), 2,126 children under 5 and 4,960 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 12:38:12] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #466: तापमान 37.31°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #466 near 28.61N, 77.2265E
-Land surface temp 37.31C | Vulnerability index 0.84
-~17,717 people at risk in this zone, incl. 3,189 elderly (65+), 2,126 children under 5 and 4,960 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 12:38:12] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #466: तापमान 37.31°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #466 near 28.61N, 77.2265E
-Land surface temp 37.31C | Vulnerability index 0.84
-~17,717 people at risk in this zone, incl. 3,189 elderly (65+), 2,126 children under 5 and 4,960 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 12:38:12] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #465: तापमान 36.97°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #465 near 28.61N, 77.21E
-Land surface temp 36.97C | Vulnerability index 0.807
-~20,200 people at risk in this zone, incl. 3,636 elderly (65+), 2,424 children under 5 and 5,656 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 12:38:12] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #465: तापमान 36.97°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #465 near 28.61N, 77.21E
-Land surface temp 36.97C | Vulnerability index 0.807
-~20,200 people at risk in this zone, incl. 3,636 elderly (65+), 2,424 children under 5 and 5,656 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 12:38:12] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #465: तापमान 36.97°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #465 near 28.61N, 77.21E
-Land surface temp 36.97C | Vulnerability index 0.807
-~20,200 people at risk in this zone, incl. 3,636 elderly (65+), 2,424 children under 5 and 5,656 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:04:44] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Россия
-ज़ोन #465: तापमान 13.5°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Россия
-Zone #465 near 64.68631N, 97.74531E
-Land surface temp 13.5C | Vulnerability index 0.863
-~20,200 people at risk in this zone, incl. 3,636 elderly (65+), 2,424 children under 5 and 5,656 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:04:44] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Россия
-ज़ोन #465: तापमान 13.5°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Россия
-Zone #465 near 64.68631N, 97.74531E
-Land surface temp 13.5C | Vulnerability index 0.863
-~20,200 people at risk in this zone, incl. 3,636 elderly (65+), 2,424 children under 5 and 5,656 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:04:44] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Россия
-ज़ोन #465: तापमान 13.5°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Россия
-Zone #465 near 64.68631N, 97.74531E
-Land surface temp 13.5C | Vulnerability index 0.863
-~20,200 people at risk in this zone, incl. 3,636 elderly (65+), 2,424 children under 5 and 5,656 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:04:44] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Россия
-ज़ोन #495: तापमान 13.21°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Россия
-Zone #495 near 64.69731N, 97.74531E
-Land surface temp 13.21C | Vulnerability index 0.848
-~17,717 people at risk in this zone, incl. 3,189 elderly (65+), 2,126 children under 5 and 4,960 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:04:44] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Россия
-ज़ोन #495: तापमान 13.21°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Россия
-Zone #495 near 64.69731N, 97.74531E
-Land surface temp 13.21C | Vulnerability index 0.848
-~17,717 people at risk in this zone, incl. 3,189 elderly (65+), 2,126 children under 5 and 4,960 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:04:44] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Россия
-ज़ोन #495: तापमान 13.21°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Россия
-Zone #495 near 64.69731N, 97.74531E
-Land surface temp 13.21C | Vulnerability index 0.848
-~17,717 people at risk in this zone, incl. 3,189 elderly (65+), 2,126 children under 5 and 4,960 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:04:44] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Россия
-ज़ोन #434: तापमान 12.84°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Россия
-Zone #434 near 64.67531N, 97.72881E
-Land surface temp 12.84C | Vulnerability index 0.808
-~16,790 people at risk in this zone, incl. 3,022 elderly (65+), 2,014 children under 5 and 4,701 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:04:44] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Россия
-ज़ोन #434: तापमान 12.84°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Россия
-Zone #434 near 64.67531N, 97.72881E
-Land surface temp 12.84C | Vulnerability index 0.808
-~16,790 people at risk in this zone, incl. 3,022 elderly (65+), 2,014 children under 5 and 4,701 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:04:44] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Россия
-ज़ोन #434: तापमान 12.84°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Россия
-Zone #434 near 64.67531N, 97.72881E
-Land surface temp 12.84C | Vulnerability index 0.808
-~16,790 people at risk in this zone, incl. 3,022 elderly (65+), 2,014 children under 5 and 4,701 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:05:01] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #466: तापमान 37.31°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #466 near 28.61N, 77.2265E
-Land surface temp 37.31C | Vulnerability index 0.84
-~17,717 people at risk in this zone, incl. 3,189 elderly (65+), 2,126 children under 5 and 4,960 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:05:01] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #466: तापमान 37.31°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #466 near 28.61N, 77.2265E
-Land surface temp 37.31C | Vulnerability index 0.84
-~17,717 people at risk in this zone, incl. 3,189 elderly (65+), 2,126 children under 5 and 4,960 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:05:01] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #466: तापमान 37.31°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #466 near 28.61N, 77.2265E
-Land surface temp 37.31C | Vulnerability index 0.84
-~17,717 people at risk in this zone, incl. 3,189 elderly (65+), 2,126 children under 5 and 4,960 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:05:01] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #465: तापमान 36.97°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #465 near 28.61N, 77.21E
-Land surface temp 36.97C | Vulnerability index 0.807
-~20,200 people at risk in this zone, incl. 3,636 elderly (65+), 2,424 children under 5 and 5,656 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:05:01] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #465: तापमान 36.97°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #465 near 28.61N, 77.21E
-Land surface temp 36.97C | Vulnerability index 0.807
-~20,200 people at risk in this zone, incl. 3,636 elderly (65+), 2,424 children under 5 and 5,656 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 15:05:01] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #465: तापमान 36.97°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #465 near 28.61N, 77.21E
-Land surface temp 36.97C | Vulnerability index 0.807
-~20,200 people at risk in this zone, incl. 3,636 elderly (65+), 2,424 children under 5 and 5,656 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
-=======
->>>>>>> da7c94d6499851033452dbbd73729b7ec68e2694
---- [2026-09-28 21:48:26] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #588: तापमान 37.2°C
+ज़ोन #588: तापमान 32.35°C
 दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
 ---
 [DEMO] HEAT ALERT (EXTREME) - Delhi NCR
 Zone #588 near 28.654N, 77.2595E
-Land surface temp 37.2C | Vulnerability index 0.812
+Land surface temp 32.35C | Vulnerability index 0.812
 ~19,376 people at risk in this zone, incl. 3,487 elderly (65+), 2,325 children under 5 and 5,425 outdoor workers.
 Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
 
---- [2026-09-28 21:48:26] MOCK whatsapp -> +91-98765-43210 (demo) ---
+--- [2026-09-29 18:13:02] MOCK whatsapp -> +91-98765-43210 (demo) ---
 [DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #588: तापमान 37.2°C
+ज़ोन #588: तापमान 32.35°C
 दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
 ---
 [DEMO] HEAT ALERT (EXTREME) - Delhi NCR
 Zone #588 near 28.654N, 77.2595E
-Land surface temp 37.2C | Vulnerability index 0.812
+Land surface temp 32.35C | Vulnerability index 0.812
 ~19,376 people at risk in this zone, incl. 3,487 elderly (65+), 2,325 children under 5 and 5,425 outdoor workers.
 Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
 
---- [2026-09-28 21:48:26] MOCK email -> heat-response-cell@municipal.gov.in ---
+--- [2026-09-29 18:13:02] MOCK email -> heat-response-cell@municipal.gov.in ---
 [DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #588: तापमान 37.2°C
+ज़ोन #588: तापमान 32.35°C
 दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
 ---
 [DEMO] HEAT ALERT (EXTREME) - Delhi NCR
 Zone #588 near 28.654N, 77.2595E
-Land surface temp 37.2C | Vulnerability index 0.812
+Land surface temp 32.35C | Vulnerability index 0.812
 ~19,376 people at risk in this zone, incl. 3,487 elderly (65+), 2,325 children under 5 and 5,425 outdoor workers.
 Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
 
---- [2026-09-28 21:48:26] MOCK sms -> +91-98765-43210 (demo) ---
+--- [2026-09-29 18:13:02] MOCK sms -> +91-98765-43210 (demo) ---
 [DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #557: तापमान 36.89°C
+ज़ोन #557: तापमान 32.04°C
 दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
 ---
 [DEMO] HEAT ALERT (EXTREME) - Delhi NCR
 Zone #557 near 28.643N, 77.243E
-Land surface temp 36.89C | Vulnerability index 0.8
+Land surface temp 32.04C | Vulnerability index 0.8
 ~16,667 people at risk in this zone, incl. 3,000 elderly (65+), 2,000 children under 5 and 4,666 outdoor workers.
 Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
 
---- [2026-09-28 21:48:26] MOCK whatsapp -> +91-98765-43210 (demo) ---
+--- [2026-09-29 18:13:02] MOCK whatsapp -> +91-98765-43210 (demo) ---
 [DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #557: तापमान 36.89°C
+ज़ोन #557: तापमान 32.04°C
 दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
 ---
 [DEMO] HEAT ALERT (EXTREME) - Delhi NCR
 Zone #557 near 28.643N, 77.243E
-Land surface temp 36.89C | Vulnerability index 0.8
+Land surface temp 32.04C | Vulnerability index 0.8
 ~16,667 people at risk in this zone, incl. 3,000 elderly (65+), 2,000 children under 5 and 4,666 outdoor workers.
 Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
 
---- [2026-09-28 21:48:26] MOCK email -> heat-response-cell@municipal.gov.in ---
+--- [2026-09-29 18:13:02] MOCK email -> heat-response-cell@municipal.gov.in ---
 [DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #557: तापमान 36.89°C
+ज़ोन #557: तापमान 32.04°C
 दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
 ---
 [DEMO] HEAT ALERT (EXTREME) - Delhi NCR
 Zone #557 near 28.643N, 77.243E
-Land surface temp 36.89C | Vulnerability index 0.8
-~16,667 people at risk in this zone, incl. 3,000 elderly (65+), 2,000 children under 5 and 4,666 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 21:53:24] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Bhopal
-ज़ोन #345: तापमान 32.53°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Bhopal
-Zone #345 near 23.216N, 77.41E
-Land surface temp 32.53C | Vulnerability index 0.831
-~17,393 people at risk in this zone, incl. 3,130 elderly (65+), 2,087 children under 5 and 4,870 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 21:53:24] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Bhopal
-ज़ोन #345: तापमान 32.53°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Bhopal
-Zone #345 near 23.216N, 77.41E
-Land surface temp 32.53C | Vulnerability index 0.831
-~17,393 people at risk in this zone, incl. 3,130 elderly (65+), 2,087 children under 5 and 4,870 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 21:53:24] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Bhopal
-ज़ोन #345: तापमान 32.53°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Bhopal
-Zone #345 near 23.216N, 77.41E
-Land surface temp 32.53C | Vulnerability index 0.831
-~17,393 people at risk in this zone, incl. 3,130 elderly (65+), 2,087 children under 5 and 4,870 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 21:53:24] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Bhopal
-ज़ोन #375: तापमान 32.4°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Bhopal
-Zone #375 near 23.227N, 77.41E
-Land surface temp 32.4C | Vulnerability index 0.818
-~19,152 people at risk in this zone, incl. 3,447 elderly (65+), 2,298 children under 5 and 5,362 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 21:53:24] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Bhopal
-ज़ोन #375: तापमान 32.4°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Bhopal
-Zone #375 near 23.227N, 77.41E
-Land surface temp 32.4C | Vulnerability index 0.818
-~19,152 people at risk in this zone, incl. 3,447 elderly (65+), 2,298 children under 5 and 5,362 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-28 21:53:24] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Bhopal
-ज़ोन #375: तापमान 32.4°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Bhopal
-Zone #375 near 23.227N, 77.41E
-Land surface temp 32.4C | Vulnerability index 0.818
-~19,152 people at risk in this zone, incl. 3,447 elderly (65+), 2,298 children under 5 and 5,362 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-29 10:28:11] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #588: तापमान 41.64°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #588 near 28.654N, 77.2595E
-Land surface temp 41.64C | Vulnerability index 0.812
-~19,376 people at risk in this zone, incl. 3,487 elderly (65+), 2,325 children under 5 and 5,425 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-29 10:28:11] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #588: तापमान 41.64°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #588 near 28.654N, 77.2595E
-Land surface temp 41.64C | Vulnerability index 0.812
-~19,376 people at risk in this zone, incl. 3,487 elderly (65+), 2,325 children under 5 and 5,425 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-29 10:28:11] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #588: तापमान 41.64°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #588 near 28.654N, 77.2595E
-Land surface temp 41.64C | Vulnerability index 0.812
-~19,376 people at risk in this zone, incl. 3,487 elderly (65+), 2,325 children under 5 and 5,425 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-29 10:28:11] MOCK sms -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #557: तापमान 41.33°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #557 near 28.643N, 77.243E
-Land surface temp 41.33C | Vulnerability index 0.8
-~16,667 people at risk in this zone, incl. 3,000 elderly (65+), 2,000 children under 5 and 4,666 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-29 10:28:11] MOCK whatsapp -> +91-98765-43210 (demo) ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #557: तापमान 41.33°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #557 near 28.643N, 77.243E
-Land surface temp 41.33C | Vulnerability index 0.8
-~16,667 people at risk in this zone, incl. 3,000 elderly (65+), 2,000 children under 5 and 4,666 outdoor workers.
-Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
-
---- [2026-09-29 10:28:11] MOCK email -> heat-response-cell@municipal.gov.in ---
-[DEMO] आपातकालीन सूचना (गंभीर गर्मी) - Delhi NCR
-ज़ोन #557: तापमान 41.33°C
-दोपहर 12-4 बजे का काम टालें, पानी/ORS पीएं, बुज़ुर्गों का ख़याल रखें। - अर्बन हीट AI नगर निगम सूचना
----
-[DEMO] HEAT ALERT (EXTREME) - Delhi NCR
-Zone #557 near 28.643N, 77.243E
-Land surface temp 41.33C | Vulnerability index 0.8
+Land surface temp 32.04C | Vulnerability index 0.8
 ~16,667 people at risk in this zone, incl. 3,000 elderly (65+), 2,000 children under 5 and 4,666 outdoor workers.
 Avoid outdoor work 12-4 PM. Drink ORS/water often. Check on elderly neighbours. - Urban Heat AI municipal warning
 
