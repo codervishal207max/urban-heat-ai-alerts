@@ -253,13 +253,6 @@ async function loadLayers(cityKey) {
     onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties) +
       `<div style="margin-top:4px;color:#e2e8f0">🗺️ Land use: <b>${landUseLabel(f.properties)}</b></div>`)
   });
-
-<<<<<<< HEAD
-  // Zone label badges were intentionally removed to avoid noisy map clutter.
-  // The grid and risk polygons remain active; only the text overlay for
-  // individual zones is disabled.
-  mapLayers.zoneLabels = null;
-=======
   // Zone-wise labeled pins — top 5 highest-LST zones get a visible marker
   // with risk level + temperature (matching the reference design's
   // "High Risk Zone (48.7°C)" pins), always shown on top of whichever grid
@@ -269,7 +262,7 @@ async function loadLayers(cityKey) {
     const [lon, lat] = centroidOf(f.geometry);
     const p = f.properties;
     const rc = riskColor(p.risk_level);
-    const icon = L.divIcon({
+    const icon = L.divIcon({ 
       className: '',
       html: `<div style="background:${rc};color:#0a0e16;font:700 0.68rem 'Segoe UI',sans-serif;
                           padding:4px 9px;border-radius:20px;white-space:nowrap;
@@ -280,7 +273,6 @@ async function loadLayers(cityKey) {
     });
     return L.marker([lat, lon], { icon }).bindPopup(popupHTML(p));
   })).addTo(map);
->>>>>>> fb802cf (Update the some dashboard file.)
 
   const heatCb = document.getElementById('layer-heat');
   if (heatCb && !heatCb.checked) map.removeLayer(mapLayers.heat);
