@@ -253,26 +253,43 @@ async function loadLayers(cityKey) {
     onEachFeature: (f,l) => l.bindPopup(popupHTML(f.properties) +
       `<div style="margin-top:4px;color:#e2e8f0">🗺️ Land use: <b>${landUseLabel(f.properties)}</b></div>`)
   });
-  // Zone-wise labeled pins — top 5 highest-LST zones get a visible marker
-  // with risk level + temperature (matching the reference design's
-  // "High Risk Zone (48.7°C)" pins), always shown on top of whichever grid
-  // layers are active. Real per-zone data, not decorative.
-  const topZones = [...feats].sort((a, b) => (b.properties.lst||0) - (a.properties.lst||0)).slice(0, 5);
-  mapLayers.zoneLabels = L.layerGroup(topZones.map(f => {
-    const [lon, lat] = centroidOf(f.geometry);
-    const p = f.properties;
-    const rc = riskColor(p.risk_level);
-    const icon = L.divIcon({ 
-      className: '',
-      html: `<div style="background:${rc};color:#0a0e16;font:700 0.68rem 'Segoe UI',sans-serif;
-                          padding:4px 9px;border-radius:20px;white-space:nowrap;
-                          box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;gap:4px;">
-               ${['High','Very High'].includes(p.risk_level) ? '⚠️' : '📍'} ${p.risk_level} — Zone ${p.cell_id} (${p.lst}°C)
-             </div>`,
-      iconSize: null, iconAnchor: [10, 10],
-    });
-    return L.marker([lat, lon], { icon }).bindPopup(popupHTML(p));
-  })).addTo(map);
+
+  // Zone-wise labeled pins — top 5 highest-LST zones
+  // are displayed with risk level and temperature.
+  const topZones = [...feats]
+    .sort((a, b) => (b.properties.lst || 0) - (a.properties.lst || 0))
+    .slice(0, 5);
+
+  mapLayers.zoneLabels = L.layerGroup(
+    topZones.map(f => {
+      const [lon, lat] = centroidOf(f.geometry);
+      const p = f.properties;
+      const rc = riskColor(p.risk_level);
+
+      return L.marker([lat, lon], {
+        icon: L.divIcon({
+          className: 'zone-label-marker',
+          html: `
+            <div style="
+              background:${rc};
+              color:#fff;
+              padding:4px 8px;
+              border-radius:6px;
+              font-size:11px;
+              font-weight:700;
+              white-space:nowrap;
+              box-shadow:0 2px 6px rgba(0,0,0,.4);
+            ">
+              Zone ${p.cell_id || ''}
+              — ${p.risk_level || 'Low'}
+              (${Number(p.lst || 0).toFixed(1)}°C)
+            </div>
+          `,
+          iconSize: null
+        })
+      });
+    })
+  );
 
   const heatCb = document.getElementById('layer-heat');
   if (heatCb && !heatCb.checked) map.removeLayer(mapLayers.heat);
